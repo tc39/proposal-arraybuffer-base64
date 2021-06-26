@@ -11,7 +11,9 @@ let buffer = new ArrayBuffer(42);
 // populate buffer here
 console.log(buffer.toBase64());
 ```
+
 and
+
 ```js
 let buffer = ArrayBuffer.fromBase64('AQMDBw=='); // returns a new length-4 ArrayBuffer
 ```
@@ -42,9 +44,10 @@ That's also been the consensus when it's come up [previously](https://discourse.
 
 ### But _which_ base64?
 
-An excellent question. Unfortunately, I think we're probably stuck with using the thing called "base64" in [the RFC](https://datatracker.ietf.org/doc/html/rfc4648#section-4) as the default; that is, using `+` and `/` to represent 62 and 63, and mandatory padding with `=`. I don't think these are good choices, but interop requires they be the default.
+An excellent question. Unfortunately, I think we're probably stuck with using the thing called "base64" in [the RFC4648](https://datatracker.ietf.org/doc/html/rfc4648#section-4) as the default; that is, using `+` and `/` to represent 62 and 63, and mandatory padding with `=`. I don't think these are good choices, but interop requires they be the default.
 
 We could potentially add an options bag argument allowing these details to be configured, as in
+
 ```js
 buffer.toBase64({ variant: 'base64url', padding: false });
 
