@@ -26,7 +26,7 @@ Yeah, probably we should add these methods there also. I'm not certain whether t
 
 ### Should these be asynchronous?
 
-In pratice most base64'd data I encounter is on the order of hundreds of bytes (e.g. SSH keys), which can be encoded and decoded extremely quickly. It would be a shame to require Promises to deal with such data, I think, especially given that the alternatives people currently use all appear to be synchronous.
+In practice most base64'd data I encounter is on the order of hundreds of bytes (e.g. SSH keys), which can be encoded and decoded extremely quickly. It would be a shame to require Promises to deal with such data, I think, especially given that the alternatives people currently use all appear to be synchronous.
 
 Possibly we should have asynchronous versions for working with large data.
 
