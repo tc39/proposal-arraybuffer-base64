@@ -2,6 +2,8 @@
 
 base64 is the de-facto standard way to represent arbitrary binary data as ASCII. JavaScript has ArrayBuffers (and other wrapping types) to work with binary data, but no built-in mechanism to encode that data as base64, nor to take base64'd data and produce a corresponding ArrayBuffer. We should fix that.
 
+See [initial spec text](https://bakkot.github.io/proposal-arraybuffer-base64/) and [slides](https://docs.google.com/presentation/d/1i7_ajP8J1EjILjBoYYkE2nmCT429-LuD7kJyhRUdXqY/edit?usp=sharing).
+
 ## Possible API
 
 ```js
