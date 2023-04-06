@@ -1,11 +1,10 @@
 {
   "private": true,
   "scripts": {
-    "start": "npm run build-loose -- --watch",
-    "build": "npm run build-loose -- --strict",
-    "build-loose": "ecmarkup --verbose spec.html index.html"
+    "build": "node scripts/static-highlight.js playground/index-raw.html > playground/index.html"
   },
   "devDependencies": {
-    "ecmarkup": "^7.1.0"
+    "jsdom": "^21.1.1",
+    "prismjs": "^1.29.0"
   }
 }

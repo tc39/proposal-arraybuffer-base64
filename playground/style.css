@@ -1,0 +1,51 @@
+body {
+  font-size: 18px;
+  line-height: 1.5;
+}
+h2 {
+  border-bottom: 2px solid #999;
+  margin-top: 2em;
+}
+pre { border-left: 4px solid #39a33c; }
+code {
+  padding: 1px 5px 2px 5px;
+  line-height: 1.1;
+  display: inline-block;
+}
+a code { color: inherit; }
+a code:hover { text-decoration: underline; }
+pre code { line-height: 1.4; }
+pre code[class*="language-"] { font-size: 0.85em; }
+pre[class*="language-"] {
+  position: relative;
+  padding: 0.5em;
+}
+pre[class*="language-"] button {
+  display: none;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+
+  width: 1.7em;
+  height: 1.7em;
+
+  font-size: 1em;
+  padding: 0.15rem;
+  background-color: transparent;
+
+  border: ridge 1px #7b7b7c;
+  border-radius: 5px;
+}
+pre[class*="language-"]:hover button {
+  display: initial;
+}
+pre[class*="language-"] button:hover {
+  cursor: pointer;
+}
+footer {
+  border-top: 1px solid var(--background);
+  color: var(--text-muted);
+  font-size: 0.8em;
+  margin-top: 2em;
+  padding-top: 10px;
+}
