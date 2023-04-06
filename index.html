@@ -79,7 +79,7 @@ console<span class="token punctuation">.</span><span class="token function">log<
 </code></pre>
 
 <h3>Streaming</h3>
-<p>Two additional methods, <code>toPartialBase64</code> and <code>fromPartialBase64</code>, allow encoding and decoding chunks of base64. This requires managing state, which is handled by returning a <code>{ result, extra }</code> pair. The options bag for these method takes two additional arguments, one which specifies whether more data is expected and one which specifies any extra values returned by a previous call.</p>
+<p>Two additional methods, <code>toPartialBase64</code> and <code>fromPartialBase64</code>, allow encoding and decoding chunks of base64. This requires managing state, which is handled by returning a <code>{ result, extra }</code> pair. The options bag for these methods takes two additional arguments, one which specifies whether more data is expected and one which specifies any extra values returned by a previous call.</p>
 <p>These methods are intended for lower-level use and are less convenient to use.</p>
 
 <p>Streaming an ArrayBuffer into chunks of base64 strings:</p>
