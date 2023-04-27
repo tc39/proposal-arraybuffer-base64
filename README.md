@@ -6,6 +6,8 @@ It is currently at Stage 1 of [the TC39 process](https://tc39.es/process-documen
 
 Try it out on [the playground](https://tc39.github.io/proposal-arraybuffer-base64/).
 
+Initial spec text is available [here](https://tc39.github.io/proposal-arraybuffer-base64/spec/).
+
 ## Basic API
 
 ```js
@@ -38,7 +40,7 @@ See [issue #13](https://github.com/tc39/proposal-arraybuffer-base64/issues/13) f
 
 In practice most base64'd data I encounter is on the order of hundreds of bytes (e.g. SSH keys), which can be encoded and decoded extremely quickly. It would be a shame to require Promises to deal with such data, I think, especially given that the alternatives people currently use all appear to be synchronous.
 
-Possibly we should have asynchronous versions for working with large data.
+Possibly we should have asynchronous versions for working with large data. That is not currently included.
 
 ### What other encodings should be included, if any?
 

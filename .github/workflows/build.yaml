@@ -1,12 +1,13 @@
-name: Deploy gh-pages
+name: Build spec
 
 on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,8 +17,4 @@ jobs:
         node-version: 20
     - run: npm ci
     - run: npm run build
-    - uses: JamesIves/github-pages-deploy-action@v4.4.1
-      with:
-        branch: gh-pages
-        folder: dist
-        clean: true
+    - run: npm run check-format
