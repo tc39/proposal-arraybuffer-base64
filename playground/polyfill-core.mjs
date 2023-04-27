@@ -174,3 +174,28 @@ export function base64ToUint8Array(str, alphabetIdentifier = 'base64', more = fa
   };
 }
 
+export function uint8ArrayToHex(arr) {
+  checkUint8Array(arr);
+  let out = '';
+  for (let i = 0; i < arr.length; ++i) {
+    out += arr[i].toString(16).padStart(2, '0');
+  }
+  return out;
+}
+
+export function hexToUint8Array(str) {
+  if (typeof str !== 'string') {
+    throw new TypeError('expected str to be a string');
+  }
+  if (str.length % 2 !== 0) {
+    throw new SyntaxError('str should be an even number of characters');
+  }
+  if (/[^0-9a-zA-Z]/.test(str)) {
+    throw new SyntaxError('str should only contain hex characters');
+  }
+  let out = new Uint8Array(str.length / 2);
+  for (let i = 0; i < out.length; ++i) {
+    out[i] = parseInt(str.slice(i * 2, i * 2 + 2), 16);
+  }
+  return out;
+}
