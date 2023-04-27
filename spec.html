@@ -34,7 +34,7 @@ contributors: Kevin Gibbons
   </emu-alg>
 </emu-clause>
 
-<emu-clause id="sec-uint8array.prototype.topartiabase64">
+<emu-clause id="sec-uint8array.prototype.topartialbase64">
   <h1>Uint8Array.prototype.toPartialBase64 ( [ _options_ ] )</h1>
   <emu-alg>
     1. Let _O_ be the *this* value.
@@ -72,10 +72,24 @@ contributors: Kevin Gibbons
   </emu-alg>
 </emu-clause>
 
+<emu-clause id="sec-uint8array.prototype.tohex">
+  <h1>Uint8Array.prototype.toHex ( )</h1>
+  <emu-alg>
+    1. Let _O_ be the *this* value.
+    1. Let _toEncode_ be ? GetUint8ArrayBytes(_O_).
+    1. Let _out_ be the empty String.
+    1. For each byte _byte_ of _toEncode_, do
+      1. Let _str_ be Number::toString(_byte_, 16).
+      1. If the length of _str_ is 1, set _str_ to the string-concatenation of *"0"* and _str_.
+      1. Set _out_ to the string-concatenation of _out_ and _str_.
+    1. Return _out_.
+  </emu-alg>
+</emu-clause>
+
 <emu-clause id="sec-uint8array.frombase64">
   <h1>Uint8Array.fromBase64 ( _string_ [ , _options_ ] )</h1>
   <emu-alg>
-    1. Set _string_ to ? GetStringForBase64(_string_).
+    1. Set _string_ to ? GetStringForBinaryEncoding(_string_).
     1. Set _options_ to ? GetOptionsObject(_options_).
     1. Let _alphabet_ be ? Get(_options_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
@@ -93,7 +107,7 @@ contributors: Kevin Gibbons
       1. If _characters_ cannot result from applying the base64url encoding specified in section 5 of RFC 4648 to some sequence of bytes, throw a *SyntaxError* exception.
       1. Let _bytes_ be the unique sequence of bytes such that applying the base64url encoding specified in section 5 of RFC 4648 to that sequence would produce _characters_.
     1. Let _resultLength_ be the number of bytes in _bytes_.
-    1. Let _result_ be ? AllocateTypedArray(*"Uint8Array*", %Uint8Array%, %Uint8Array.prototype%, _resultLength_).
+    1. Let _result_ be ? AllocateTypedArray(*"Uint8Array"*, %Uint8Array%, %Uint8Array.prototype%, _resultLength_).
     1. Set the value at each index of _result_.[[ViewedArrayBuffer]].[[ArrayBufferData]] to the value at the corresponding index of _bytes_.
     1. Return _result_.
   </emu-alg>
@@ -102,7 +116,7 @@ contributors: Kevin Gibbons
 <emu-clause id="sec-uint8array.frompartialbase64">
   <h1>Uint8Array.fromPartialBase64 ( _string_ [ , _options_ ] )</h1>
   <emu-alg>
-    1. Set _string_ to ? GetStringForBase64(_string_).
+    1. Set _string_ to ? GetStringForBinaryEncoding(_string_).
     1. Set _options_ to ? GetOptionsObject(_options_).
     1. Let _alphabet_ be ? Get(_options_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
@@ -111,7 +125,7 @@ contributors: Kevin Gibbons
     1. Let _more_ be ToBoolean(? Get(_options_, *"more"*)).
     1. Let _extra_ be ? Get(_options_, *"extra"*).
     1. If _extra_ is neither *undefined* nor *null*, then
-      1. Let _extraString_ be ? GetStringForBase64(_extra_).
+      1. Let _extraString_ be ? GetStringForBinaryEncoding(_extra_).
       1. Set _string_ to the list-concatenation of _extraString_ and _string_.
     1. If _more_ is *true*, then
       1. TODO: think about handling of padding on _string_ / _extra_ in this case. This currently assumes no padding on either.
@@ -134,12 +148,33 @@ contributors: Kevin Gibbons
       1. If _characters_ cannot result from applying the base64url encoding specified in section 5 of RFC 4648 to some sequence of bytes, throw a *SyntaxError* exception.
       1. Let _bytes_ be the unique sequence of bytes such that applying the base64url encoding specified in section 5 of RFC 4648 to that sequence would produce _characters_.
     1. Let _resultLength_ be the number of bytes in _bytes_.
-    1. Let _result_ be ? AllocateTypedArray(*"Uint8Array*", %Uint8Array%, %Uint8Array.prototype%, _resultLength_).
+    1. Let _result_ be ? AllocateTypedArray(*"Uint8Array"*, %Uint8Array%, %Uint8Array.prototype%, _resultLength_).
     1. Set the value at each index of _result_.[[ViewedArrayBuffer]].[[ArrayBufferData]] to the value at the corresponding index of _bytes_.
     1. Let _obj_ be OrdinaryObjectCreate(%Object.prototype%).
     1. Perform ! CreateDataPropertyOrThrow(_obj_, *"result"*, _result_).
     1. Perform ! CreateDataPropertyOrThrow(_obj_, *"extra"*, _overflow_).
     1. Return _obj_.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="sec-uint8array.fromhex">
+  <h1>Uint8Array.fromHex ( _string_ )</h1>
+  <emu-alg>
+    1. Set _string_ to ? GetStringForBinaryEncoding(_string_).
+    1. TODO: consider stripping whitespace here.
+    1. Let _stringLen_ be the length of _string_.
+    1. If _stringLen_ modulo 2 is not 0, throw a *SyntaxError* exception.
+    1. If _string_ contains any code units which are not in *"0123456789abcdefABCDEF"*, throw a *SyntaxError* exception.
+    1. Let _resultLength_ be _stringLen_ / 2.
+    1. Let _result_ be ? AllocateTypedArray(*"Uint8Array"*, %Uint8Array%, %Uint8Array.prototype%, _resultLength_).
+    1. Let _index_ be 0.
+    1. Repeat, while _index_ &lt; _resultLength_,
+      1. Let _stringIndex_ be _index_ * 2.
+      1. Let _hexits_ be the substring of _string_ from _stringIndex_ to _stringIndex_ + 2.
+      1. Let _byte_ be the integer value represented by _hexits_ in base-16 notation, using the letters A-F and a-f for digits with values 10 through 15.
+      1. Perform ! IntegerIndexedElementSet(_result_, 𝔽(_index_), 𝔽(_byte_)).
+      1. Set _index_ to _index_ + 1.
+    1. Return _result_.
   </emu-alg>
 </emu-clause>
 
@@ -162,18 +197,18 @@ contributors: Kevin Gibbons
   </emu-alg>
 </emu-clause>
 
-<emu-clause id="sec-getstringforbase64" type="abstract operation">
+<emu-clause id="sec-getstringforbinaryencoding" type="abstract operation">
   <h1>
-    GetStringForBase64 (
+    GetStringForBinaryEncoding (
       _arg_: an ECMAScript language value,
     ): either a normal completion containing a String or a throw completion
   </h1>
   <dl class="header"></dl>
   <emu-alg>
     1. If _arg_ is an Object, return ? ToString(_arg_).
-    1. NOTE: Because `[` is not a valid base64 character, the Strings returned by %Object.prototype.toString% will produce a SyntaxError below. Implementations are encouraged to provide an informative error message in that situations.
+    1. NOTE: Because `[` is not a valid base64 or hex character, the Strings returned by %Object.prototype.toString% will produce a SyntaxError during encoding. Implementations are encouraged to provide an informative error message in that situations.
     1. Else if _arg_ is not a String, throw a TypeError exception.
-    1. NOTE: The above step is included to prevent errors such as accidentally passing `null` and receiving a Uint8Array containing the bytes « 0x9e, 0xe9, 0x65 ».
+    1. NOTE: The above step is included to prevent errors such as accidentally passing `null` to `fromBase64` and receiving a Uint8Array containing the bytes « 0x9e, 0xe9, 0x65 ».
     1. Return _arg_.
   </emu-alg>
 </emu-clause>
