@@ -1,9 +1,15 @@
 {
   "private": true,
   "scripts": {
-    "build": "node scripts/static-highlight.js playground/index-raw.html > playground/index.html"
+    "build-playground": "mkdir -p dist && cp playground/* dist && node scripts/static-highlight.js playground/index-raw.html > dist/index.html && rm dist/index-raw.html",
+    "build-spec": "mkdir -p dist/spec && ecmarkup --lint-spec --strict --load-biblio @tc39/ecma262-biblio --verbose --js-out dist/spec/ecmarkup.js --css-out dist/spec/ecmarkup.css spec.html dist/spec/index.html",
+    "build": "npm run build-playground && npm run build-spec",
+    "format": "emu-format --write spec.html",
+    "check-format": "emu-format --check spec.html"
   },
-  "devDependencies": {
+  "dependencies": {
+    "@tc39/ecma262-biblio": "2.1.2553",
+    "ecmarkup": "^17.0.0",
     "jsdom": "^21.1.1",
     "prismjs": "^1.29.0"
   }
