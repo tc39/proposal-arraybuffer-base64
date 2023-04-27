@@ -48,8 +48,8 @@ if (navigator.clipboard) {
 <h1>Proposed Support for Base64 in JavaScript</h1>
 
 <h2 id="introduction">Introduction</h2>
-<p>This page documents an early-stage proposal for native base64 support in JavaScript, and includes a <strong>non-production</strong> polyfill you can experiment with in the browser's console.</p>
-<p>The proposal would provide methods for encoding and decoding Uint8Arrays as base64 strings.</p>
+<p>This page documents an early-stage proposal for native base64 and hex encoding and decoding for binary data in JavaScript, and includes a <strong>non-production, slightly inaccurate</strong> polyfill you can experiment with in the browser's console. Some details of the polyfill, particularly around coercion and order of observable effects, are not identical to the proposed spec text.</p>
+<p>The proposal would provide methods for encoding and decoding Uint8Arrays as base64 and hex strings.</p>
 <p>Feedback on <a href="https://github.com/tc39/proposal-arraybuffer-base64">the proposal's repository</a> is appreciated.</p>
 
 <h2 id="API">API</h2>
@@ -66,10 +66,23 @@ console<span class="token punctuation">.</span><span class="token function">log<
 <span class="token comment">// Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100])</span>
 </code></pre>
 
+<p>Encoding a Uint8Array to a hex string:</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">let</span> arr <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Uint8Array</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">72</span><span class="token punctuation">,</span> <span class="token number">101</span><span class="token punctuation">,</span> <span class="token number">108</span><span class="token punctuation">,</span> <span class="token number">108</span><span class="token punctuation">,</span> <span class="token number">111</span><span class="token punctuation">,</span> <span class="token number">32</span><span class="token punctuation">,</span> <span class="token number">87</span><span class="token punctuation">,</span> <span class="token number">111</span><span class="token punctuation">,</span> <span class="token number">114</span><span class="token punctuation">,</span> <span class="token number">108</span><span class="token punctuation">,</span> <span class="token number">100</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>arr<span class="token punctuation">.</span><span class="token function">toHex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// '48656c6c6f20576f726c64='</span>
+</code></pre>
+
+<p>Decoding a hex string to a Uint8Array:</p>
+<pre class="language-js"><code class="language-js"><span class="token keyword">let</span> string <span class="token operator">=</span> <span class="token string">'48656c6c6f20576f726c64'</span><span class="token punctuation">;</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>Uint8Array<span class="token punctuation">.</span><span class="token function">fromHex</span><span class="token punctuation">(</span>string<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100])</span>
+</code></pre>
+
 <h3>Options</h3>
-<p>Both methods take an optional options bag which allows specifying the alphabet as either "base64" (the default) or "base64url" (<a href="https://datatracker.ietf.org/doc/html/rfc4648#section-5">the URL-safe variant</a>).</p>
+<p>The base64 methods take an optional options bag which allows specifying the alphabet as either "base64" (the default) or "base64url" (<a href="https://datatracker.ietf.org/doc/html/rfc4648#section-5">the URL-safe variant</a>).</p>
 <p>In the future this may allow specifying arbitrary alphabets.</p>
 <p>In later versions of this proposal the options bag may also allow additional options, such as specifying whether to generate / enforce padding characters and how to handle whitespace.</p>
+<p>The hex methods do not have any options.</p>
 
 <pre class="language-js"><code class="language-js"><span class="token keyword">let</span> array <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Uint8Array</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">251</span><span class="token punctuation">,</span> <span class="token number">255</span><span class="token punctuation">,</span> <span class="token number">191</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span>array<span class="token punctuation">.</span><span class="token function">toBase64</span><span class="token punctuation">(</span><span class="token punctuation">{</span> <span class="token literal-property property">alphabet</span><span class="token operator">:</span> <span class="token string">'base64'</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -81,6 +94,7 @@ console<span class="token punctuation">.</span><span class="token function">log<
 <h3>Streaming</h3>
 <p>Two additional methods, <code>toPartialBase64</code> and <code>fromPartialBase64</code>, allow encoding and decoding chunks of base64. This requires managing state, which is handled by returning a <code>{ result, extra }</code> pair. The options bag for these methods takes two additional arguments, one which specifies whether more data is expected and one which specifies any extra values returned by a previous call.</p>
 <p>These methods are intended for lower-level use and are less convenient to use.</p>
+<p>Streaming versions of the hex APIs are not included since they are straightforward to do manually.</p>
 
 <p>Streaming an ArrayBuffer into chunks of base64 strings:</p>
 <pre class="language-js"><code class="language-js"><span class="token keyword">let</span> buffer <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Float64Array</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">0.1</span><span class="token punctuation">,</span> <span class="token number">0.2</span><span class="token punctuation">,</span> <span class="token number">0.3</span><span class="token punctuation">,</span> <span class="token number">0.4</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span>buffer<span class="token punctuation">;</span>
