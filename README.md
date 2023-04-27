@@ -1,6 +1,6 @@
-# Uint8Array to/from base64
+# Uint8Array to/from base64 and hex
 
-base64 is a common way to represent arbitrary binary data as ASCII. JavaScript has Uint8Arrays to work with binary data, but no built-in mechanism to encode that data as base64, nor to take base64'd data and produce a corresponding Uint8Arrays. This is a proposal to fix that.
+base64 is a common way to represent arbitrary binary data as ASCII. JavaScript has Uint8Arrays to work with binary data, but no built-in mechanism to encode that data as base64, nor to take base64'd data and produce a corresponding Uint8Arrays. This is a proposal to fix that. It also adds methods for converting between hex strings and Uint8Arrays.
 
 It is currently at Stage 1 of [the TC39 process](https://tc39.es/process-document/).
 
@@ -14,23 +14,31 @@ Initial spec text is available [here](https://tc39.github.io/proposal-arraybuffe
 let arr = new Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]);
 console.log(arr.toBase64());
 // 'SGVsbG8gV29ybGQ='
+console.log(arr.toHex());
+// '48656c6c6f20576f726c64'
 ```
 
 ```js
 let string = 'SGVsbG8gV29ybGQ=';
 console.log(Uint8Array.fromBase64(string));
 // Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100])
+
+string = '48656c6c6f20576f726c64';
+console.log(Uint8Array.fromHex(string));
+// Uint8Array([72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100])
 ```
 
-This would add `Uint8Array.prototype.toBase64` and `Uint8Array.fromBase64` methods. The latter would throw if given a string which is not properly base64 encoded.
+This would add `Uint8Array.prototype.toBase64`/`Uint8Array.prototype.toHex` and `Uint8Array.fromBase64`/`Uint8Array.fromHex` methods. The latter pair would throw if given a string which is not properly encoded.
 
 ## Options
 
-An options bag argument could allow specifying additional details such as the alphabet (to include at least `base64` and `base64url`), whether to generate / enforce padding, and how to handle whitespace.
+An options bag argument for the base64 methods could allow specifying additional details such as the alphabet (to include at least `base64` and `base64url`), whether to generate / enforce padding, and how to handle whitespace.
 
 ## Streaming API
 
 Additional `toPartialBase64` and `fromPartialBase64` methods would allow working with chunks of base64, at the cost of more complexity. See [the playground](https://tc39.github.io/proposal-arraybuffer-base64/) linked above for examples.
+
+Streaming versions of the hex APIs are not included since they are straightforward to do manually.
 
 See [issue #13](https://github.com/tc39/proposal-arraybuffer-base64/issues/13) for discussion.
 
@@ -44,7 +52,7 @@ Possibly we should have asynchronous versions for working with large data. That 
 
 ### What other encodings should be included, if any?
 
-I think hex makes sense, and no others. Hex is not yet implemented in the playground. The current plan is for new encodings to be added as seperate methods.
+I think base64 and hex are the only encodings which make sense, and those are currently included.
 
 See issues [#7](https://github.com/tc39/proposal-arraybuffer-base64/issues/7), [#8](https://github.com/tc39/proposal-arraybuffer-base64/issues/8), and [#11](https://github.com/tc39/proposal-arraybuffer-base64/issues/11).
 
@@ -62,6 +70,6 @@ That's also been the consensus when it's come up [previously](https://discourse.
 
 Uint8Arrays can be partial views of an underlying buffer, so you can create such a view and invoke `.toBase64` on it.
 
-### What if I want to decode a Base64 string into an existing Typed Array or ArrayBuffer?
+### What if I want to decode a Base64 or hex string into an existing Typed Array or ArrayBuffer?
 
 While that is a reasonable things to want, I think it need not be included in the initial version of this API. We can add it later if demand proves high. Until then, copying slices of memory (e.g. using `target.set(chunk, offset)`) is quite fast.
