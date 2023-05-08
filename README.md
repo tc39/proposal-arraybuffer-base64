@@ -48,7 +48,7 @@ See [issue #13](https://github.com/tc39/proposal-arraybuffer-base64/issues/13) f
 
 In practice most base64'd data I encounter is on the order of hundreds of bytes (e.g. SSH keys), which can be encoded and decoded extremely quickly. It would be a shame to require Promises to deal with such data, I think, especially given that the alternatives people currently use all appear to be synchronous.
 
-Possibly we should have asynchronous versions for working with large data. That is not currently included.
+Possibly we should have asynchronous versions for working with large data. That is not currently included. For the moment you can use the streaming API to chunk the work.
 
 ### What other encodings should be included, if any?
 
