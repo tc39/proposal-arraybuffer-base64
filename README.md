@@ -2,7 +2,7 @@
 
 base64 is a common way to represent arbitrary binary data as ASCII. JavaScript has Uint8Arrays to work with binary data, but no built-in mechanism to encode that data as base64, nor to take base64'd data and produce a corresponding Uint8Arrays. This is a proposal to fix that. It also adds methods for converting between hex strings and Uint8Arrays.
 
-It is currently at Stage 1 of [the TC39 process](https://tc39.es/process-document/).
+It is currently at Stage 2 of [the TC39 process](https://tc39.es/process-document/).
 
 Try it out on [the playground](https://tc39.github.io/proposal-arraybuffer-base64/).
 
