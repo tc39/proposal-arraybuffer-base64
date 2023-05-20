@@ -19,8 +19,8 @@ contributors: Kevin Gibbons
   <emu-alg>
     1. Let _O_ be the *this* value.
     1. Let _toEncode_ be ? GetUint8ArrayBytes(_O_).
-    1. Set _options_ to ? GetOptionsObject(_options_).
-    1. Let _alphabet_ be ? Get(_options_, *"alphabet"*).
+    1. Let _opts_ be ? GetOptionsObject(_options_).
+    1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
     1. Set _alphabet_ to ? ToString(_alphabet_).
     1. If _alphabet_ is neither *"base64"* nor *"base64url"*, throw a *TypeError* exception.
@@ -39,13 +39,13 @@ contributors: Kevin Gibbons
   <emu-alg>
     1. Let _O_ be the *this* value.
     1. Let _toEncode_ be ? GetUint8ArrayBytes(_O_).
-    1. Set _options_ to ? GetOptionsObject(_options_).
-    1. Let _alphabet_ be ? Get(_options_, *"alphabet"*).
+    1. Let _opts_ be ? GetOptionsObject(_options_).
+    1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
     1. Set _alphabet_ to ? ToString(_alphabet_).
     1. If _alphabet_ is neither *"base64"* nor *"base64url"*, throw a *TypeError* exception.
-    1. Let _more_ be ToBoolean(? Get(_options_, *"more"*)).
-    1. Let _extra_ be ? Get(_options_, *"extra"*).
+    1. Let _more_ be ToBoolean(? Get(_opts_, *"more"*)).
+    1. Let _extra_ be ? Get(_opts_, *"extra"*).
     1. If _extra_ is neither *undefined* nor *null*, then
       1. TODO: consider handling array-of-bytes.
       1. Let _extraBytes_ be ? GetUint8ArrayBytes(_extra_).
@@ -87,11 +87,11 @@ contributors: Kevin Gibbons
 </emu-clause>
 
 <emu-clause id="sec-uint8array.frombase64">
-  <h1>Uint8Array.fromBase64 ( _string_ [ , _options_ ] )</h1>
+  <h1>Uint8Array.fromBase64 ( _value_ [ , _options_ ] )</h1>
   <emu-alg>
-    1. Set _string_ to ? GetStringForBinaryEncoding(_string_).
-    1. Set _options_ to ? GetOptionsObject(_options_).
-    1. Let _alphabet_ be ? Get(_options_, *"alphabet"*).
+    1. Let _string_ be ? GetStringForBinaryEncoding(_value_).
+    1. Let _opts_ be ? GetOptionsObject(_options_).
+    1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
     1. Set _alphabet_ to ? ToString(_alphabet_).
     1. If _alphabet_ is neither *"base64"* nor *"base64url"*, throw a *TypeError* exception.
@@ -114,16 +114,16 @@ contributors: Kevin Gibbons
 </emu-clause>
 
 <emu-clause id="sec-uint8array.frompartialbase64">
-  <h1>Uint8Array.fromPartialBase64 ( _string_ [ , _options_ ] )</h1>
+  <h1>Uint8Array.fromPartialBase64 ( _value_ [ , _options_ ] )</h1>
   <emu-alg>
-    1. Set _string_ to ? GetStringForBinaryEncoding(_string_).
-    1. Set _options_ to ? GetOptionsObject(_options_).
-    1. Let _alphabet_ be ? Get(_options_, *"alphabet"*).
+    1. Let _string_ be ? GetStringForBinaryEncoding(_value_).
+    1. Let _opts_ be ? GetOptionsObject(_options_).
+    1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
     1. Set _alphabet_ to ? ToString(_alphabet_).
     1. If _alphabet_ is neither *"base64"* nor *"base64url"*, throw a *TypeError* exception.
-    1. Let _more_ be ToBoolean(? Get(_options_, *"more"*)).
-    1. Let _extra_ be ? Get(_options_, *"extra"*).
+    1. Let _more_ be ToBoolean(? Get(_opts_, *"more"*)).
+    1. Let _extra_ be ? Get(_opts_, *"extra"*).
     1. If _extra_ is neither *undefined* nor *null*, then
       1. Let _extraString_ be ? GetStringForBinaryEncoding(_extra_).
       1. Set _string_ to the list-concatenation of _extraString_ and _string_.
@@ -158,9 +158,9 @@ contributors: Kevin Gibbons
 </emu-clause>
 
 <emu-clause id="sec-uint8array.fromhex">
-  <h1>Uint8Array.fromHex ( _string_ )</h1>
+  <h1>Uint8Array.fromHex ( _value_ )</h1>
   <emu-alg>
-    1. Set _string_ to ? GetStringForBinaryEncoding(_string_).
+    1. Let _string_ be ? GetStringForBinaryEncoding(_value_).
     1. TODO: consider stripping whitespace here.
     1. Let _stringLen_ be the length of _string_.
     1. If _stringLen_ modulo 2 is not 0, throw a *SyntaxError* exception.

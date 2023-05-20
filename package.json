@@ -1,5 +1,6 @@
 {
   "private": true,
+  "name": "proposal-arraybuffer-base64",
   "scripts": {
     "build-playground": "mkdir -p dist && cp playground/* dist && node scripts/static-highlight.js playground/index-raw.html > dist/index.html && rm dist/index-raw.html",
     "build-spec": "mkdir -p dist/spec && ecmarkup --lint-spec --strict --load-biblio @tc39/ecma262-biblio --verbose --js-out dist/spec/ecmarkup.js --css-out dist/spec/ecmarkup.css spec.html dist/spec/index.html",
