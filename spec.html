@@ -205,11 +205,11 @@ contributors: Kevin Gibbons
   </h1>
   <dl class="header"></dl>
   <emu-alg>
-    1. If _arg_ is an Object, return ? ToString(_arg_).
+    1. If _arg_ is an Object, let _string_ be ? ToPrimitive(_arg_, ~string~); else let _string_ be _arg_.
     1. NOTE: Because `[` is not a valid base64 or hex character, the Strings returned by %Object.prototype.toString% will produce a SyntaxError during encoding. Implementations are encouraged to provide an informative error message in that situations.
-    1. Else if _arg_ is not a String, throw a TypeError exception.
+    1. if _string_ is not a String, throw a TypeError exception.
     1. NOTE: The above step is included to prevent errors such as accidentally passing `null` to `fromBase64` and receiving a Uint8Array containing the bytes « 0x9e, 0xe9, 0x65 ».
-    1. Return _arg_.
+    1. Return _string_.
   </emu-alg>
 </emu-clause>
 
