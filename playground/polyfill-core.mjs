@@ -79,8 +79,7 @@ export function uint8ArrayToBase64(arr, alphabetIdentifier = 'base64', more = fa
 
 // this is extremely inefficient, but easy to reason about
 // actual implementations should use something more efficient except possibly at boundaries
-// TODO not export
-export function decodeOneBase64Character(extraBitCount, extraBits, alphabetMap, char) {
+function decodeOneBase64Character(extraBitCount, extraBits, alphabetMap, char) {
   let val = alphabetMap.get(char);
   switch (extraBitCount) {
     case 0: {
@@ -106,9 +105,8 @@ export function decodeOneBase64Character(extraBitCount, extraBits, alphabetMap, 
 }
 
 
-// TODO not export
 // TODO simplify
-export function countFullBytesInBase64StringIncludingExtraBits(str, extraBitCount) {
+function countFullBytesInBase64StringIncludingExtraBits(str, extraBitCount) {
   if (str === '=' && extraBitCount === 0) {
     // special case arising when a `=` char is the second half of a `==` pair
     return 0;
@@ -207,8 +205,8 @@ export function base64ToUint8Array(str, alphabet, into = null, extraBitCount = 0
     0, { extraBitCount, extraBits } = decodeOneBase64Character(extraBitCount, extraBits, alphabetMap, char);
     ++read;
   }
-  // TODO maybe have `extra` be undefined when extraBitCount is 0
-  return { result: into, read, written, extra: { count: extraBitCount, bits: extraBits } };
+  let extra = extraBitCount === 0 ? void 0 : { count: extraBitCount, bits: extraBits };
+  return { result: into, read, written, extra };
 }
 
 export function uint8ArrayToHex(arr) {
