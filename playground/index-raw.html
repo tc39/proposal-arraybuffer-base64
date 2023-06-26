@@ -97,9 +97,10 @@ console.log(array.toBase64({ alphabet: 'base64url' }));
 </code></pre>
 
 <h3>Streaming</h3>
-<p>Two additional methods, <code>toPartialBase64</code> and <code>fromPartialBase64</code>, allow encoding and decoding chunks of base64. This requires managing state, which is handled by returning a <code>{ result, extra }</code> pair. The options bag for these methods takes two additional arguments, one which specifies whether more data is expected and one which specifies any extra values returned by a previous call.</p>
+<p>Two additional methods, <code>toPartialBase64</code> and <code>fromPartialBase64</code>, allow encoding and decoding chunks of base64. This requires managing state, which is handled by returning a <code>{ result, extra }</code> pair; the <code>extra</code> argument must be round-tripped by the user to the next call as part of the options bag.</p>
+<p><code>toPartialBase64</code> requires specifing a <code>more</code> parameter, which should be true for all but the final chunk, in order to generate the final characters and any necessary padding.</p>
 <p>These methods are intended for lower-level use and are less convenient to use.</p>
-<p>Streaming versions of the hex APIs are not included since they are straightforward to do manually.</p>
+<p>Streaming versions of the hex APIs are not included at this time. That may change.</p>
 
 <p>Streaming an ArrayBuffer into chunks of base64 strings:</p>
 <pre class="language-js"><code class="language-js">
@@ -116,6 +117,8 @@ for (let offset = 0; offset < buffer.byteLength; offset += chunkSize) {
 }
 ({ result } = extra.toPartialBase64({ more: false }));
 resultChunks.push(result);
+// result chunks are guaranteed to be correct-padded base64 strings
+
 console.log(resultChunks);
 // ['mpmZmZmZ', 'uT+amZmZ', 'mZnJPzMz', 'MzMzM9M/', 'mpmZmZmZ', '', '2T8=']
 </code></pre>
@@ -123,19 +126,17 @@ console.log(resultChunks);
 <p>Streaming base64 strings into Uint8Arrays:</p>
 <pre class="language-js"><code class="language-js">
 let chunks = ['mpmZmZmZuT+am', 'ZmZmZnJPzMz', 'MzMz', 'M9M/mpmZmZmZ', '2T8='];
-// individual chunks are not necessarily correctly-padded base64 strings
+// individual chunks are not required to be correctly-padded base64 strings
 
 let output = new Uint8Array(new ArrayBuffer(0, { maxByteLength: 1024 }));
 let result, extra;
 for (let c of chunks) {
-  ({ result, extra } = Uint8Array.fromPartialBase64(c, { more: true, extra }));
+  ({ result, extra, } = Uint8Array.fromPartialBase64(c, { extra }));
   let offset = output.length;
   let newLength = offset + result.length;
   output.buffer.resize(newLength);
   output.set(result, offset);
 }
-// if padding was optional,
-// you'd need to do a final `fromPartialBase64` call here with `more: false`
 
 console.log(new Float64Array(output.buffer));
 // Float64Array([0.1, 0.2, 0.3, 0.4])
@@ -190,6 +191,76 @@ source
   .pipeThrough(new BufferToStringTransformStream())
   .pipeTo(sink);
 </code></pre>
+
+<h3>Decoding base64 strings to an existing Uint8Array</h3>
+<p><code>fromPartialBase64</code> additionally allows you to write data into to an existing buffer. This is handled by an <code>into</code> argument in the options bag, together with <code>inputOffset</code> and <code>outputOffset</code> arguments, as well as <code>read</code> and <written> return values.</p>
+
+<pre class="language-js"><code class="language-js">
+let input = 'SGVsbG8gV29ybGQ=';
+let buffer = new Uint8Array(4);
+let outputOffset = 0;
+let inputOffset = 0;
+let extra, written, read;
+
+while (inputOffset < input.length) {
+  0, { extra, written, read } = Uint8Array.fromPartialBase64(input, {
+    extra,
+    into: buffer,
+    inputOffset,
+    outputOffset,
+  });
+
+  inputOffset += read;
+  outputOffset += written;
+
+  if (outputOffset === buffer.length) {
+    // output is full; consume it
+    console.log([...buffer]);
+    outputOffset = 0;
+  }
+}
+if (outputOffset > 0) {
+  console.log([...buffer].slice(0, outputOffset));
+}
+</code></pre>
+
+<p>This can be combined with streaming as follows:</p>
+<pre class="language-js"><code class="language-js">
+let chunks = ['VGhpcyB', 'pcyBzb2', '1lIGV4YW1w', 'bGUgZGF0YS4='];
+let output = new Uint8Array(4);
+let outputOffset = 0;
+let extra;
+for (let chunk of chunks) {
+  let written, read;
+  let inputOffset = 0;
+
+  while (inputOffset < chunk.length) {
+    0, { extra, written, read } = Uint8Array.fromPartialBase64(chunk, {
+      extra,
+      into: output,
+      inputOffset,
+      outputOffset,
+    });
+
+    inputOffset += read;
+    outputOffset += written;
+
+    if (outputOffset === output.length) {
+      // output is full; consume it
+      console.log([...output]);
+      outputOffset = 0;
+    }
+  }
+}
+if (outputOffset > 0) {
+  console.log([...output].slice(0, outputOffset));
+}
+</code></pre>
+
+<p>This is guaranteed to fill the provided Uint8Array if enough input is available to do so.</p>
+
+<h3>Decoding hex strings to an existing Uint8Array</h3>
+<p>At the moment there is no facility to do so. We will likely add a <code>fromPartialHex</code> method similar to <code>fromPartialHex</code> which provides this ability.
 
 <footer>
   <p>Thanks for reading! If you got this far, you should try out the proposal in your browser's developer tools on this page, and submit feedback on <a href="https://github.com/tc39/proposal-arraybuffer-base64">GitHub</a>.</p>

@@ -169,8 +169,7 @@ export function base64ToUint8Array(str, alphabet, into = null, extraBitCount = 0
   if (codepoints.some(((c, i) => c === '=' && !(i === codepoints.length - 1 || i === codepoints.length - 2) || c !== '=' && !alphabetMap.has(c)))) {
     throw new Error('bad character');
   }
-  // TODO maybe pull this out into the different methods
-  let totalBytesForChunk = countFullBytesInBase64StringIncludingExtraBits(str, extraBitCount); // also validates padding, if present
+  let totalBytesForChunk = countFullBytesInBase64StringIncludingExtraBits(str, extraBitCount); // also kinda validates padding, if present
   let bytesToWrite;
   let outputIndex;
   if (into == null) {

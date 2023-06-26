@@ -32,6 +32,12 @@ Uint8Array.fromBase64 = function (string, opts) {
   if (typeof string !== 'string') {
     throw new Error('expected argument to be a string');
   }
+  if (string.endsWith('=')) {
+    // TODO should we validate padding even if absent? i.e. enforce length%4===0 unconditionally?
+    if (string.length % 4 !== 0 || string.endsWith('===')) {
+      throw new Error('bad padding');
+    }
+  }
   opts = getOptionsObject(opts);
   let { alphabet: alphabetIdentifier } = opts;
   let alphabet = typeof alphabetIdentifier === 'undefined' ? alphabetFromIdentifier('base64') : alphabetFromIdentifier(alphabetIdentifier);
@@ -47,7 +53,7 @@ Uint8Array.fromPartialBase64 = function (string, opts) {
   let alphabet = typeof alphabetIdentifier === 'undefined' ? alphabetFromIdentifier('base64') : alphabetFromIdentifier(alphabetIdentifier);
   let extraBitCount = 0, extraBits = 0;
   if (extra !== null && typeof extra === 'object') {
-    let { count: extraBitCount, bits: extraBits } = extra;
+    0, { count: extraBitCount, bits: extraBits } = extra;
     if (typeof extraBitCount !== 'number' || !(extraBitCount === 0 || extraBitCount === 2 || extraBitCount === 4 || extraBitCount === 6)) {
       throw new TypeError('bit count must be 0, 2, 4, or 6');
     }
