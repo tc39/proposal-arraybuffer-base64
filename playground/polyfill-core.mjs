@@ -20,7 +20,8 @@ function assert(condition, message) {
   }
 }
 
-function alphabetFromIdentifier(alphabet) {
+// todo not export
+export function alphabetFromIdentifier(alphabet) {
   if (alphabet === 'base64') {
     return base64Characters;
   } else if (alphabet === 'base64url') {
@@ -77,101 +78,147 @@ export function uint8ArrayToBase64(arr, alphabetIdentifier = 'base64', more = fa
   }
 }
 
-export function base64ToUint8Array(str, alphabetIdentifier = 'base64', more = false, origExtra = null) {
+// this is extremely inefficient, but easy to reason about
+// actual implementations should use something more efficient except possibly at boundaries
+// TODO not export
+export function decodeOneBase64Character(extraBitCount, extraBits, alphabetMap, char) {
+  let val = alphabetMap.get(char);
+  switch (extraBitCount) {
+    case 0: {
+      // i.e., this is the first of 4 characters
+      return { extraBitCount: 6, extraBits: val, byte: null };
+    }
+    case 2: {
+      // i.e., this is the 4th of 4 characters
+      return { extraBitCount: 0, extraBits: 0, byte: (extraBits << 6) | val };
+    }
+    case 4: {
+      // i.e., this is the 3rd of 4 characters
+      return { extraBitCount: 2, extraBits: val & 0b11, byte: (extraBits << 4) | ((val & 0b111100) >> 2) };
+    }
+    case 6: {
+      // i.e., this is the 2nd of 4 characters
+      return { extraBitCount: 4, extraBits: val & 0b1111, byte: (extraBits << 2) | ((val & 0b110000) >> 4) };
+    }
+    default: {
+      throw new Error(`unreachable: extraBitCount ${extraBitCount}`);
+    }
+  }
+}
+
+
+// TODO not export
+// TODO simplify
+export function countFullBytesInBase64StringIncludingExtraBits(str, extraBitCount) {
+  if (str === '=' && extraBitCount === 0) {
+    // special case arising when a `=` char is the second half of a `==` pair
+    return 0;
+  }
+  let paddingCharCount = str.endsWith('==') ? 2 : str.endsWith('=') ? 1 : 0;
+  let fullChunks = Math.floor((str.length - paddingCharCount) / 4);
+  let bytesFromFullChunks = fullChunks * 3;
+  if (paddingCharCount === 2) {
+    let extraCharCount = (str.length - 2) % 4;
+    let isCorrectlyPadded =
+      (extraCharCount === 0 && extraBitCount === 4)
+      || (extraCharCount === 1 && extraBitCount === 6)
+      || (extraCharCount === 2 && extraBitCount === 0)
+      || (extraCharCount === 3 && extraBitCount === 2);
+    if (!isCorrectlyPadded) {
+      throw new Error('string is incorrectly padded');
+    }
+    let bytesFromExtraChars =
+      extraCharCount === 0 ? 0
+      : extraCharCount === 1 ? 1
+      : extraCharCount === 2 ? 1
+      : extraCharCount === 3 ? 2
+      : unreachable();
+    return bytesFromFullChunks + bytesFromExtraChars;
+  } else if (paddingCharCount === 1) {
+    let extraCharCount = (str.length - 1) % 4;
+    let isCorrectlyPadded = // the '||' cases arise when the string is cut off halfway through a `==` pair
+      (extraCharCount === 0 && (extraBitCount === 2 || extraBitCount === 4))
+      || (extraCharCount === 1 && (extraBitCount === 4 || extraBitCount === 6))
+      || (extraCharCount === 2 && (extraBitCount === 6 || extraBitCount === 0))
+      || (extraCharCount === 3 && (extraBitCount === 0 || extraBitCount === 2));
+    if (!isCorrectlyPadded) {
+      throw new Error('string is incorrectly padded');
+    }
+    let bytesFromExtraChars =
+      extraCharCount === 0 ? 0
+      : extraCharCount === 1 ? 1
+      : extraCharCount === 2 ? (extraBitCount === 6 ? 2 : 1)
+      : extraCharCount === 3 ? 2
+      : unreachable();
+    return bytesFromFullChunks + bytesFromExtraChars;
+  } else {
+    let extraCharCount = (str.length) % 4;
+    let bytesFromExtraChars =
+      extraCharCount === 0 ? 0 // 0 bits from overflow, plus extra bits
+      : extraCharCount === 1 ? (extraBitCount === 0 ? 0 : 1) // 6 bits from overflow, plus extra bits
+      : extraCharCount === 2 ? (extraBitCount === 4 || extraBitCount === 6 ? 2 : 1) // 12 bits from overflow, plus extra bits
+      : extraCharCount === 3 ? (extraBitCount === 6 ? 3 : 2) // 18 bits from overflow, plus extra bits
+      : unreachable();
+    return bytesFromFullChunks + bytesFromExtraChars;
+  }
+}
+
+export function base64ToUint8Array(str, alphabetIdentifier = 'base64', into = null, extra = null, inputOffset = 0, outputOffset = 0) {
   if (typeof str !== 'string') {
     throw new TypeError('expected str to be a string');
   }
+  // TODO other typechecks
   let alphabet = alphabetFromIdentifier(alphabetIdentifier);
-  more = !!more;
-  if (origExtra != null) {
-    if (typeof origExtra !== 'string') {
-      throw new TypeError('expected extra to be a string');
-    }
-    str = origExtra + str;
+  let { count: extraBitCount, bits: extraBits } = extra ?? { count: 0, bits: 0 };
+  let alphabetMap = new Map(alphabet.split('').map((c, i) => [c, i]));
+  str = str.slice(inputOffset);
+  let codepoints = [...str]; // NB does not validate characters before inputOffset - should it? probably already been validated, but might be faster to just run on the whole string
+  if (codepoints.some(((c, i) => c === '=' && !(i === codepoints.length - 1 || i === codepoints.length - 2) || c !== '=' && !alphabetMap.has(c)))) {
+    throw new Error('bad character');
   }
-  let map = new Map(alphabet.split('').map((c, i) => [c, i]));
-
-  let extra;
-  if (more) {
-    let padding = str.length % 4;
-    if (padding === 0) {
-      extra = '';
-    } else {
-      extra = str.slice(-padding);
-      str = str.slice(0, -padding)
+  let totalBytesForChunk = countFullBytesInBase64StringIncludingExtraBits(str, extraBitCount); // also validates padding, if present
+  let bytesToWrite;
+  let outputIndex;
+  if (into == null) {
+    if (outputOffset !== 0) {
+      throw new TypeError('outputOffset cannot be used with into');
     }
+    into = new Uint8Array(totalBytesForChunk);
+    bytesToWrite = totalBytesForChunk;
   } else {
-    // todo opt-in optional padding
-    if (str.length % 4 !== 0) {
-      throw new Error('not correctly padded');
-    }
-    extra = null;
+    bytesToWrite = Math.min(into.length - outputOffset, totalBytesForChunk);
+    // TODO error if bytesToWrite is ≤ 0, maybe?
   }
-  assert(str.length % 4 === 0, 'str.length % 4 === 0');
-  if (str.endsWith('==')) {
-    str = str.slice(0, -2);
-  } else if (str.endsWith('=')) {
-    str = str.slice(0, -1);
-  }
-
-  let result = [];
-  let i = 0;
-  for (; i + 3 < str.length; i += 4) {
-    let c1 = str[i];
-    let c2 = str[i + 1];
-    let c3 = str[i + 2];
-    let c4 = str[i + 3];
-    if ([c1, c2, c3, c4].some(c => !map.has(c))) {
-      throw new Error('bad character');
+  let byte;
+  let written = 0;
+  let read = 0;
+  while (written < bytesToWrite) {
+    let char = str[read];
+    if (char === '=') {
+      throw new Error('unreachable');
     }
-    let triplet =
-      (map.get(c1) << 18) +
-      (map.get(c2) << 12) +
-      (map.get(c3) << 6) +
-      map.get(c4);
-
-    result.push(
-      (triplet >> 16) & 255,
-      (triplet >> 8) & 255,
-      triplet & 255
-    );
-  }
-  // TODO if we want to be _really_ pedantic, following the RFC, we should enforce the extra 2-4 bits are 0
-  if (i + 2 === str.length) {
-    // the `==` case
-    let c1 = str[i];
-    let c2 = str[i + 1];
-    if ([c1, c2].some(c => !map.has(c))) {
-      throw new Error('bad character');
+    0, { extraBitCount, extraBits, byte } = decodeOneBase64Character(extraBitCount, extraBits, alphabetMap, char);
+    ++read;
+    if (byte != null) {
+      into[outputOffset + written] = byte;
+      ++written;
     }
-    let triplet =
-      (map.get(c1) << 18) +
-      (map.get(c2) << 12);
-    result.push((triplet >> 16) & 255);
-  } else if (i + 3 === str.length) {
-    // the `=` case
-    let c1 = str[i];
-    let c2 = str[i + 1];
-    let c3 = str[i + 2];
-    if ([c1, c2, c3].some(c => !map.has(c))) {
-      throw new Error('bad character');
-    }
-    let triplet =
-      (map.get(c1) << 18) +
-      (map.get(c2) << 12) +
-      (map.get(c3) << 6);
-    result.push(
-      (triplet >> 16) & 255,
-      (triplet >> 8) & 255,
-    );
-  } else {
-    assert(i === str.length);
   }
-
-  return {
-    result: new Uint8Array(result),
-    extra,
-  };
+  if (read < str.length && str[read] === '=') {
+    read = str.length;
+    // TODO if we want to be really pedantic, check extraBits === 0 here
+    if (extraBitCount === 0 || extraBitCount === 6) {
+      throw new Error('unreachable: malformed padding (checked earlier)');
+    }
+  }
+  if (read < str.length && extraBitCount === 0) {
+    // we can read one more character and store it in extra
+    let char = str[read];
+    0, { extraBitCount, extraBits } = decodeOneBase64Character(extraBitCount, extraBits, alphabetMap, char);
+    ++read;
+  }
+  // TODO maybe have `extra` be undefined when extraBitCount is 0
+  return { result: into, read, written, extra: { count: extraBitCount, bits: extraBits } };
 }
 
 export function uint8ArrayToHex(arr) {

@@ -33,11 +33,11 @@ Uint8Array.fromPartialBase64 = function (string, opts) {
   if (typeof string !== 'string') {
     throw new Error('expected argument to be a string');
   }
-  let alphabet, more, extra;
+  let alphabet, extra, into, inputOffset, outputOffset;
   if (opts && typeof opts === 'object') {
-    0, { alphabet, more, extra } = opts;
+    0, { alphabet, extra, into, inputOffset, outputOffset } = opts;
   }
-  return base64ToUint8Array(string, alphabet, more, extra);
+  return base64ToUint8Array(string, alphabet, into, extra, inputOffset, outputOffset);
 };
 
 Uint8Array.prototype.toHex = function () {
