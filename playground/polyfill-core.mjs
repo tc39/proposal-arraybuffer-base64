@@ -20,7 +20,6 @@ function assert(condition, message) {
   }
 }
 
-// todo not export
 export function alphabetFromIdentifier(alphabet) {
   if (alphabet === 'base64') {
     return base64Characters;
@@ -163,26 +162,18 @@ export function countFullBytesInBase64StringIncludingExtraBits(str, extraBitCoun
   }
 }
 
-export function base64ToUint8Array(str, alphabetIdentifier = 'base64', into = null, extra = null, inputOffset = 0, outputOffset = 0) {
-  if (typeof str !== 'string') {
-    throw new TypeError('expected str to be a string');
-  }
-  // TODO other typechecks
-  let alphabet = alphabetFromIdentifier(alphabetIdentifier);
-  let { count: extraBitCount, bits: extraBits } = extra ?? { count: 0, bits: 0 };
+export function base64ToUint8Array(str, alphabet, into = null, extraBitCount = 0, extraBits = 0, inputOffset = 0, outputOffset = 0) {
   let alphabetMap = new Map(alphabet.split('').map((c, i) => [c, i]));
   str = str.slice(inputOffset);
   let codepoints = [...str]; // NB does not validate characters before inputOffset - should it? probably already been validated, but might be faster to just run on the whole string
   if (codepoints.some(((c, i) => c === '=' && !(i === codepoints.length - 1 || i === codepoints.length - 2) || c !== '=' && !alphabetMap.has(c)))) {
     throw new Error('bad character');
   }
+  // TODO maybe pull this out into the different methods
   let totalBytesForChunk = countFullBytesInBase64StringIncludingExtraBits(str, extraBitCount); // also validates padding, if present
   let bytesToWrite;
   let outputIndex;
   if (into == null) {
-    if (outputOffset !== 0) {
-      throw new TypeError('outputOffset cannot be used with into');
-    }
     into = new Uint8Array(totalBytesForChunk);
     bytesToWrite = totalBytesForChunk;
   } else {
