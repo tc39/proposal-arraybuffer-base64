@@ -22,53 +22,14 @@ contributors: Kevin Gibbons
     1. Let _opts_ be ? GetOptionsObject(_options_).
     1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
-    1. Set _alphabet_ to ? ToString(_alphabet_).
+    1. If _alphabet_ is not a String, throw a *TypeError* exception.
     1. If _alphabet_ is neither *"base64"* nor *"base64url"*, throw a *TypeError* exception.
     1. If _alphabet_ is *"base64"*, then
-      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64 encoding specified in section 4 of RFC 4648.
+      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64 encoding specified in section 4 of RFC 4648. Padding is included.
     1. Else,
       1. Assert: _alphabet_ is *"base64url"*.
-      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64url encoding specified in section 5 of RFC 4648.
+      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64url encoding specified in section 5 of RFC 4648. Padding is included.
     1. Return CodePointsToString(_outAscii_).
-    1. NOTE: CodePointsToString is used only because RFC 4648 does not produce a sequence of code units. Implementations may be able to produce an ECMAScript string directly.
-  </emu-alg>
-</emu-clause>
-
-<emu-clause id="sec-uint8array.prototype.topartialbase64">
-  <h1>Uint8Array.prototype.toPartialBase64 ( [ _options_ ] )</h1>
-  <emu-alg>
-    1. Let _O_ be the *this* value.
-    1. Let _toEncode_ be ? GetUint8ArrayBytes(_O_).
-    1. Let _opts_ be ? GetOptionsObject(_options_).
-    1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
-    1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
-    1. Set _alphabet_ to ? ToString(_alphabet_).
-    1. If _alphabet_ is neither *"base64"* nor *"base64url"*, throw a *TypeError* exception.
-    1. Let _more_ be ToBoolean(? Get(_opts_, *"more"*)).
-    1. Let _extra_ be ? Get(_opts_, *"extra"*).
-    1. If _extra_ is neither *undefined* nor *null*, then
-      1. TODO: consider handling array-of-bytes.
-      1. Let _extraBytes_ be ? GetUint8ArrayBytes(_extra_).
-      1. Set _toEncode_ to the list-concatenation of _extraBytes_ and _toEncode_.
-    1. If _more_ is *true*, then
-      1. Let _toEncodeLength_ be the length of _toEncode_.
-      1. Let _overflowLength_ be _toEncodeLength_ modulo 3.
-      1. Let _overflowBytes_ be a List whose elements are the last _overflowLength_ elements of _toEncode_.
-      1. TODO: convert _overflowBytes_ to a new Uint8Array here.
-      1. Remove the last _overflowLength_ elements of _toEncode_.
-    1. Else,
-      1. Let _overflowBytes_ be *null*.
-    1. If _alphabet_ is *"base64"*, then
-      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64 encoding specified in section 4 of RFC 4648.
-    1. Else,
-      1. Assert: _alphabet_ is *"base64url"*.
-      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64url encoding specified in section 5 of RFC 4648.
-    1. Let _result_ be CodePointsToString(_outAscii_).
-    1. NOTE: CodePointsToString is used only because RFC 4648 does not produce a sequence of code units. Implementations may be able to produce an ECMAScript string directly.
-    1. Let _obj_ be OrdinaryObjectCreate(%Object.prototype%).
-    1. Perform ! CreateDataPropertyOrThrow(_obj_, *"result"*, _result_).
-    1. Perform ! CreateDataPropertyOrThrow(_obj_, *"extra"*, _overflowBytes_).
-    1. Return _obj_.
   </emu-alg>
 </emu-clause>
 
@@ -87,80 +48,59 @@ contributors: Kevin Gibbons
 </emu-clause>
 
 <emu-clause id="sec-uint8array.frombase64">
-  <h1>Uint8Array.fromBase64 ( _value_ [ , _options_ ] )</h1>
+  <h1>Uint8Array.fromBase64 ( _string_ [ , _options_ ] )</h1>
+  <p>The <dfn id="standard-base64-alphabet">standard base64 alphabet</dfn> is a List whose elements are the code points corresponding to every letter and number in the Unicode Basic Latin block along with *"+"* and *"/"*; that is, it is StringToCodePoints(*"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/").</p>
   <emu-alg>
-    1. Let _string_ be ? GetStringForBinaryEncoding(_value_).
+    1. If _string_ is not a String, throw a *TypeError* exception.
     1. Let _opts_ be ? GetOptionsObject(_options_).
     1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
-    1. Set _alphabet_ to ? ToString(_alphabet_).
+    1. If _alphabet_ is not a String, throw a *TypeError* exception.
     1. If _alphabet_ is neither *"base64"* nor *"base64url"*, throw a *TypeError* exception.
-    1. TODO: normalize whitespace / padding here.
-    1. TODO: figure out what the right defaults for whitespace/padding are.
-    1. Let _characters_ be StringToCodePoints(_string_).
-    1. NOTE: StringToCodePoints is used only because RFC 4648 does not produce a sequence of code units. Implementations may be able to base64-decode _string_ directly.
-    1. If _alphabet_ is *"base64"*, then
-      1. If _characters_ cannot result from applying the base64 encoding specified in section 4 of RFC 4648 to some sequence of bytes, throw a *SyntaxError* exception.
-      1. Let _bytes_ be the unique sequence of bytes such that applying the base64 encoding specified in section 4 of RFC 4648 to that sequence would produce _characters_.
+    1. Let _strict_ be ToBoolean(? Get(_opts_, *"strict"*)).
+    1. NOTE: The order of validation and decoding in the algorithm below is not observable. Implementations are encouraged to perform them in whatever order is most efficient, possibly interleaving validation and stripping whitespace with decoding, as long as the behaviour is observably equivalent.
+    1. Let _input_ be StringToCodePoints(_string_).
+    1. If _alphabet_ is *"base64url"*, then
+      1. If _input_ contains U+002B (PLUS SIGN) or U+002F (SOLIDUS), throw a *SyntaxError* exception.
+      1. Replace all occurrences of U+002D (HYPHEN-MINUS) in _input_ with U+002B (PLUS SIGN).
+      1. Replace all occurrences of U+005F (LOW LINE) in _input_ with U+002F (SOLIDUS).
+    1. NOTE: When _strict_ is *false*, the algorithm below is equivalent to the <a href="https://infra.spec.whatwg.org/#forgiving-base64-decode">forgiving-base64 decode</a> operation in HTML.
+    1. If _strict_ is *false*, then
+      1. Remove all occurrences of U+0009 (TAB), U+000A (LF), U+000C (FF), U+000D (CR), and U+0020 (SPACE) from _input_.
+    1. Let _inputLength_ be the length of _input_.
+    1. If _inputLength_ modulo 4 is 0, then
+      1. If _input_ is not empty and the last element of _input_ is U+003D (EQUALS SIGN), then
+        1. Remove the last element of _input_.
+        1. Set _inputLength_ to _inputLength_ - 1.
+        1. If _input_ is not empty and the last element of _input_ is U+003D (EQUALS SIGN), then
+          1. Remove the last element of _input_.
+          1. Set _inputLength_ to _inputLength_ - 1.
     1. Else,
-      1. Assert: _alphabet_ is *"base64url*".
-      1. If _characters_ cannot result from applying the base64url encoding specified in section 5 of RFC 4648 to some sequence of bytes, throw a *SyntaxError* exception.
-      1. Let _bytes_ be the unique sequence of bytes such that applying the base64url encoding specified in section 5 of RFC 4648 to that sequence would produce _characters_.
-    1. Let _resultLength_ be the number of bytes in _bytes_.
-    1. Let _result_ be ? AllocateTypedArray(*"Uint8Array"*, %Uint8Array%, %Uint8Array.prototype%, _resultLength_).
+      1. If _strict_ is *true*, throw a *SyntaxError* exception.
+    1. If _input_ contains any elements which are not also elements of the standard base64 alphabet, throw a *SyntaxError* exception.
+    1. Let _lastChunkSize_ be _inputLength_ modulo 4.
+    1. If _lastChunkSize_ is 1, then
+      1. Throw a *SyntaxError* exception.
+    1. Else if _lastChunkSize_ is 2 or _lastChunkSize_ is 3, then
+      1. Append U+0041 (LATIN CAPITAL LETTER A) to _lastChunkSize_ a total of (4 - _lastChunkSize_) times.
+    1. Let _bytes_ be the unique sequence of bytes such that applying the base64 encoding specified in section 4 of RFC 4648 to that sequence would produce _input_.
+    1. Let _byteLength_ be the length _bytes_.
+    1. If _lastChunkSize_ is 2, then
+      1. If _strict_ is *true* and _bytes_[_byteLength_ - 2] is not 0, throw a *SyntaxError* exception.
+      1. Remove the final 2 elements of _bytes_.
+    1. Else if _lastChunkSize_ is 3, then
+      1. If _strict_ is *true* and _bytes_[_byteLength_ - 1] is not 0, throw a *SyntaxError* exception.
+      1. Remove the final element of _bytes_.
+    1. Let _result_ be ? AllocateTypedArray(*"Uint8Array"*, %Uint8Array%, %Uint8Array.prototype%, _byteLength_).
     1. Set the value at each index of _result_.[[ViewedArrayBuffer]].[[ArrayBufferData]] to the value at the corresponding index of _bytes_.
     1. Return _result_.
   </emu-alg>
 </emu-clause>
 
-<emu-clause id="sec-uint8array.frompartialbase64">
-  <h1>Uint8Array.fromPartialBase64 ( _value_ [ , _options_ ] )</h1>
-  <emu-alg>
-    1. Let _string_ be ? GetStringForBinaryEncoding(_value_).
-    1. Let _opts_ be ? GetOptionsObject(_options_).
-    1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
-    1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
-    1. Set _alphabet_ to ? ToString(_alphabet_).
-    1. If _alphabet_ is neither *"base64"* nor *"base64url"*, throw a *TypeError* exception.
-    1. Let _more_ be ToBoolean(? Get(_opts_, *"more"*)).
-    1. Let _extra_ be ? Get(_opts_, *"extra"*).
-    1. If _extra_ is neither *undefined* nor *null*, then
-      1. Let _extraString_ be ? GetStringForBinaryEncoding(_extra_).
-      1. Set _string_ to the list-concatenation of _extraString_ and _string_.
-    1. If _more_ is *true*, then
-      1. TODO: think about handling of padding on _string_ / _extra_ in this case. This currently assumes no padding on either.
-      1. Let _stringLength_ be the length of _string_.
-      1. Let _overflowLength_ be _stringLength_ modulo 4.
-      1. Let _newLength_ be _stringLength_ - _overflowLength_.
-      1. Let _overflow_ be the substring of _string_ from _newLength_.
-      1. Set _string_ to the substring of _string_ from 0 to _newLength_.
-    1. Else,
-      1. Let _overflow_ be *null*.
-    1. TODO: normalize whitespace / strip padding here.
-    1. TODO: figure out what the right defaults for whitespace/padding are.
-    1. Let _characters_ be StringToCodePoints(_string_).
-    1. NOTE: StringToCodePoints is used only because RFC 4648 does not produce a sequence of code units. Implementations may be able to base64-decode _string_ directly.
-    1. If _alphabet_ is *"base64"*, then
-      1. If _characters_ cannot result from applying the base64 encoding specified in section 4 of RFC 4648 to some sequence of bytes, throw a *SyntaxError* exception.
-      1. Let _bytes_ be the unique sequence of bytes such that applying the base64 encoding specified in section 4 of RFC 4648 to that sequence would produce _characters_.
-    1. Else,
-      1. Assert: _alphabet_ is *"base64url*".
-      1. If _characters_ cannot result from applying the base64url encoding specified in section 5 of RFC 4648 to some sequence of bytes, throw a *SyntaxError* exception.
-      1. Let _bytes_ be the unique sequence of bytes such that applying the base64url encoding specified in section 5 of RFC 4648 to that sequence would produce _characters_.
-    1. Let _resultLength_ be the number of bytes in _bytes_.
-    1. Let _result_ be ? AllocateTypedArray(*"Uint8Array"*, %Uint8Array%, %Uint8Array.prototype%, _resultLength_).
-    1. Set the value at each index of _result_.[[ViewedArrayBuffer]].[[ArrayBufferData]] to the value at the corresponding index of _bytes_.
-    1. Let _obj_ be OrdinaryObjectCreate(%Object.prototype%).
-    1. Perform ! CreateDataPropertyOrThrow(_obj_, *"result"*, _result_).
-    1. Perform ! CreateDataPropertyOrThrow(_obj_, *"extra"*, _overflow_).
-    1. Return _obj_.
-  </emu-alg>
-</emu-clause>
-
 <emu-clause id="sec-uint8array.fromhex">
-  <h1>Uint8Array.fromHex ( _value_ )</h1>
+  <h1>Uint8Array.fromHex ( _string_ )</h1>
   <emu-alg>
-    1. Let _string_ be ? GetStringForBinaryEncoding(_value_).
+    1. If _string_ is not a String, throw a *TypeError* exception.
     1. TODO: consider stripping whitespace here.
     1. Let _stringLen_ be the length of _string_.
     1. If _stringLen_ modulo 2 is not 0, throw a *SyntaxError* exception.
@@ -194,22 +134,6 @@ contributors: Kevin Gibbons
     1. Let _offset_ be _ta_.[[ByteOffset]].
     1. Let _length_ be _ta_.[[ArrayLength]].
     1. Return a List whose elements are the byte values in _block_ starting at _offset_ and continuing for a total of _length_ bytes, in order.
-  </emu-alg>
-</emu-clause>
-
-<emu-clause id="sec-getstringforbinaryencoding" type="abstract operation">
-  <h1>
-    GetStringForBinaryEncoding (
-      _arg_: an ECMAScript language value,
-    ): either a normal completion containing a String or a throw completion
-  </h1>
-  <dl class="header"></dl>
-  <emu-alg>
-    1. If _arg_ is an Object, let _string_ be ? ToPrimitive(_arg_, ~string~); else let _string_ be _arg_.
-    1. NOTE: Because `[` is not a valid base64 or hex character, the Strings returned by %Object.prototype.toString% will produce a SyntaxError during encoding. Implementations are encouraged to provide an informative error message in that situations.
-    1. if _string_ is not a String, throw a TypeError exception.
-    1. NOTE: The above step is included to prevent errors such as accidentally passing `null` to `fromBase64` and receiving a Uint8Array containing the bytes « 0x9e, 0xe9, 0x65 ».
-    1. Return _string_.
   </emu-alg>
 </emu-clause>
 
