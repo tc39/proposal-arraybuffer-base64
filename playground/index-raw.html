@@ -48,7 +48,7 @@ if (navigator.clipboard) {
 <h1>Proposed Support for Base64 in JavaScript</h1>
 
 <h2 id="introduction">Introduction</h2>
-<p>This page documents an early-stage proposal for native base64 and hex encoding and decoding for binary data in JavaScript, and includes a <strong>non-production, slightly inaccurate</strong> polyfill you can experiment with in the browser's console. Some details of the polyfill, particularly around coercion and order of observable effects, are not identical to the proposed spec text.</p>
+<p>This page documents a stage-2 proposal for native base64 and hex encoding and decoding for binary data in JavaScript, and includes a <strong>non-production</strong> polyfill you can experiment with in the browser's console.</p>
 <p>The proposal would provide methods for encoding and decoding Uint8Arrays as base64 and hex strings.</p>
 <p>Feedback on <a href="https://github.com/tc39/proposal-arraybuffer-base64">the proposal's repository</a> is appreciated.</p>
 
@@ -84,8 +84,7 @@ console.log(Uint8Array.fromHex(string));
 
 <h3>Options</h3>
 <p>The base64 methods take an optional options bag which allows specifying the alphabet as either "base64" (the default) or "base64url" (<a href="https://datatracker.ietf.org/doc/html/rfc4648#section-5">the URL-safe variant</a>).</p>
-<p>In the future this may allow specifying arbitrary alphabets.</p>
-<p>In later versions of this proposal the options bag may also allow additional options, such as specifying whether to generate / enforce padding characters and how to handle whitespace.</p>
+<p>When encoding, the options bag also allows specifying <code>strict: false</code> (the default) or <code>strict: true</code>. When using <code>strict: false</code>, whitespace is legal and padding is optional. When using <code>strict: true</code>, whitespace is forbidden and standard padding (including any overflow bits in the last character being 0) is enforced - i.e., only <a href="https://datatracker.ietf.org/doc/html/rfc4648#section-3.5">canonical</a> encodings are allowed.</p>
 <p>The hex methods do not have any options.</p>
 
 <pre class="language-js"><code class="language-js">
@@ -94,102 +93,29 @@ console.log(array.toBase64({ alphabet: 'base64' }));
 // '+/+/'
 console.log(array.toBase64({ alphabet: 'base64url' }));
 // '-_-_'
+
+console.log(Uint8Array.fromBase64('SGVsbG8g\nV29ybG R'));
+// works, despite whitespace, missing padding, and non-zero overflow bits
+
+try {
+  Uint8Array.fromBase64('SGVsbG8g\nV29ybG Q=', { strict: true });
+} catch {
+  console.log('with strict: true, whitespace is rejected');
+}
+try {
+  Uint8Array.fromBase64('SGVsbG8gV29ybGQ', { strict: true });
+} catch {
+  console.log('with strict: true, padding is required');
+}
+try {
+  Uint8Array.fromBase64('SGVsbG8gV29ybGR=', { strict: true });
+} catch {
+  console.log('with strict: true, non-zero overflow bits are rejected');
+}
 </code></pre>
 
 <h3>Streaming</h3>
-<p>Two additional methods, <code>toPartialBase64</code> and <code>fromPartialBase64</code>, allow encoding and decoding chunks of base64. This requires managing state, which is handled by returning a <code>{ result, extra }</code> pair. The options bag for these methods takes two additional arguments, one which specifies whether more data is expected and one which specifies any extra values returned by a previous call.</p>
-<p>These methods are intended for lower-level use and are less convenient to use.</p>
-<p>Streaming versions of the hex APIs are not included since they are straightforward to do manually.</p>
-
-<p>Streaming an ArrayBuffer into chunks of base64 strings:</p>
-<pre class="language-js"><code class="language-js">
-let buffer = (new Float64Array([0.1, 0.2, 0.3, 0.4])).buffer;
-let chunkSize = 6;
-let resultChunks = [];
-
-let result, extra;
-for (let offset = 0; offset < buffer.byteLength; offset += chunkSize) {
-  let length = Math.min(chunkSize, buffer.byteLength - offset);
-  let view = new Uint8Array(buffer, offset, length);
-  ({ result, extra } = view.toPartialBase64({ more: true, extra }));
-  resultChunks.push(result);
-}
-({ result } = extra.toPartialBase64({ more: false }));
-resultChunks.push(result);
-console.log(resultChunks);
-// ['mpmZmZmZ', 'uT+amZmZ', 'mZnJPzMz', 'MzMzM9M/', 'mpmZmZmZ', '', '2T8=']
-</code></pre>
-
-<p>Streaming base64 strings into Uint8Arrays:</p>
-<pre class="language-js"><code class="language-js">
-let chunks = ['mpmZmZmZuT+am', 'ZmZmZnJPzMz', 'MzMz', 'M9M/mpmZmZmZ', '2T8='];
-// individual chunks are not necessarily correctly-padded base64 strings
-
-let output = new Uint8Array(new ArrayBuffer(0, { maxByteLength: 1024 }));
-let result, extra;
-for (let c of chunks) {
-  ({ result, extra } = Uint8Array.fromPartialBase64(c, { more: true, extra }));
-  let offset = output.length;
-  let newLength = offset + result.length;
-  output.buffer.resize(newLength);
-  output.set(result, offset);
-}
-// if padding was optional,
-// you'd need to do a final `fromPartialBase64` call here with `more: false`
-
-console.log(new Float64Array(output.buffer));
-// Float64Array([0.1, 0.2, 0.3, 0.4])
-</code></pre>
-
-<p>Note that the above snippet makes use of the <a href="https://github.com/tc39/proposal-resizablearraybuffer">Growable ArrayBuffers</a> proposal for illustration, which not all browsers support as of this writing.</p>
-
-<p>A more involved example, creating a TransformStream which encodes contiguous Uint8Arrays:</p>
-<pre class="language-js"><code class="language-js">
-class BufferToStringTransformStream extends TransformStream {
-  #extra = null;
-  constructor(alphabet) {
-    super({
-      transform: (chunk, controller) => {
-        let { result, extra } = chunk.toPartialBase64({
-          alphabet,
-          extra: this.#extra,
-          more: true,
-        });
-        this.#extra = extra;
-        controller.enqueue(result);
-      },
-      flush: (controller) => {
-        if (this.#extra == null) return; // stream was empty
-        let { result } = this.#extra.toPartialBase64({ alphabet });
-        controller.enqueue(result);
-      },
-    });
-  }
-}
-
-// use:
-let source = new ReadableStream({
-  start(controller) {
-    controller.enqueue(new Uint8Array([1, 2]));
-    controller.enqueue(new Uint8Array([3, 4]));
-    controller.close();
-  },
-});
-
-let chunks = [];
-let sink = new WritableStream({
-  write(chunk) {
-    chunks.push(chunk);
-  },
-  close() {
-    console.log(chunks.join('')); // 'AQIDBA=='
-  },
-});
-
-source
-  .pipeThrough(new BufferToStringTransformStream())
-  .pipeTo(sink);
-</code></pre>
+<p>There is no support for streaming. However, it can be implemented in userland.</p>
 
 <footer>
   <p>Thanks for reading! If you got this far, you should try out the proposal in your browser's developer tools on this page, and submit feedback on <a href="https://github.com/tc39/proposal-arraybuffer-base64">GitHub</a>.</p>
