@@ -6,7 +6,7 @@ It is currently at Stage 2 of [the TC39 process](https://tc39.es/process-documen
 
 Try it out on [the playground](https://tc39.github.io/proposal-arraybuffer-base64/).
 
-Initial spec text is available [here](https://tc39.github.io/proposal-arraybuffer-base64/spec/).
+Spec text is available [here](https://tc39.github.io/proposal-arraybuffer-base64/spec/).
 
 ## Basic API
 
@@ -32,27 +32,65 @@ This would add `Uint8Array.prototype.toBase64`/`Uint8Array.prototype.toHex` and 
 
 ## Options
 
-An options bag argument for the base64 methods could allow specifying additional details such as the alphabet (to include at least `base64` and `base64url`), whether to generate / enforce padding, and how to handle whitespace.
+An options bag argument for the base64 methods allows specifying the alphabet as either `base64` or `base64url`.
 
-## Streaming API
+When encoding, the options bag also allows specifying `strict: false` (the default) or `strict: true`. When using `strict: false`, whitespace is legal and padding is optional. When using `strict: true`, whitespace is forbidden and standard padding (including any overflow bits in the last character being 0) is enforced - i.e., only [canonical](https://datatracker.ietf.org/doc/html/rfc4648#section-3.5) encodings are allowed.
 
-Additional `toPartialBase64` and `fromPartialBase64` methods would allow working with chunks of base64, at the cost of more complexity. See [the playground](https://tc39.github.io/proposal-arraybuffer-base64/) linked above for examples.
+## Streaming
 
-Streaming versions of the hex APIs are not included since they are straightforward to do manually.
+There is no support for streaming. However, it is [relatively straightforward to do effeciently in userland](./stream.mjs) on top of this API, with support for all the same options as the underlying functions.
 
-See [issue #13](https://github.com/tc39/proposal-arraybuffer-base64/issues/13) for discussion.
+## FAQ
 
-## Questions
+### What variation exists among base64 implementations in standards, in other languages, and in existing JavaScript libraries?
 
-### Should these be asynchronous?
+I have a [whole page on that](./base64.md), with tables and footnotes and everything. There is relatively little room for variation, but languages and libraries manage to explore almost all of the room there is.
+
+To summarize, base64 encoders can vary in the following ways:
+
+- Standard or URL-safe alphabet
+- Whether `=` is included in output
+- Whether to add linebreaks after a certain number of characters
+
+and decoders can vary in the following ways:
+
+- Standard or URL-safe alphabet
+- Whether `=` is required in input, and how to handle malformed padding (e.g. extra `=`)
+- Whether to fail on non-zero padding bits
+- Whether lines must be of a limited length
+- How non-base64-alphabet characters are handled (sometimes with special handling for only a subset, like whitespace)
+
+### What alphabets are supported?
+
+For base64, you can specify either base64 or base64url for both the encoder and the decoder.
+
+For hex, both lowercase and uppercase characters (including mixed within the same string) will decode successfully. Output is always lowercase.
+
+### How is `=` padding handled?
+
+Padding is always generated. The base64 decoder does not require it to be present unless `strict: true` is specified; however, if it is present, it must be well-formed (i.e., once stripped of whitespace the length of the string must be a multiple of 4, and there can be 1 or 2 padding `=` characters).
+
+### How are the extra padding bits handled?
+
+If the length of your input data isn't exactly a multiple of 3 bytes, then encoding it will use either 2 or 3 base64 characters to encode the final 1 or 2 bytes. Since each base64 character is 6 bits, this means you'll be using either 12 or 18 bits to represent 8 or 16 bits, which means you have an extra 4 or 2 bits which don't encode anything.
+
+Per [the RFC](https://datatracker.ietf.org/doc/html/rfc4648#section-3.5), decoders MAY reject input strings where the padding bits are non-zero. Here, non-zero padding bits are silently ignored when `strict: false` (the default), and are an error when `strict: true`.
+
+### How is whitespace handled?
+
+The encoders do not output whitespace. The hex decoder does not allow it as input. The base64 decoder allows [ASCII whitespace](https://infra.spec.whatwg.org/#ascii-whitespace) anywhere in the string as long as `strict: true` is not specified.
+
+### How are other characters handled?
+
+The presence of any other characters causes an exception.
+
+### Why are these synchronous?
 
 In practice most base64'd data I encounter is on the order of hundreds of bytes (e.g. SSH keys), which can be encoded and decoded extremely quickly. It would be a shame to require Promises to deal with such data, I think, especially given that the alternatives people currently use all appear to be synchronous.
 
-Possibly we should have asynchronous versions for working with large data. That is not currently included. For the moment you can use the streaming API to chunk the work.
+### Why just these encodings?
 
-### What other encodings should be included, if any?
-
-I think base64 and hex are the only encodings which make sense, and those are currently included.
+While other string encodings exist, none are nearly as commonly used as these two.
 
 See issues [#7](https://github.com/tc39/proposal-arraybuffer-base64/issues/7), [#8](https://github.com/tc39/proposal-arraybuffer-base64/issues/8), and [#11](https://github.com/tc39/proposal-arraybuffer-base64/issues/11).
 
