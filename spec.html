@@ -81,16 +81,20 @@ contributors: Kevin Gibbons
     1. Let _lastChunkSize_ be _inputLength_ modulo 4.
     1. If _lastChunkSize_ is 1, then
       1. Throw a *SyntaxError* exception.
-    1. Else if _lastChunkSize_ is 2 or _lastChunkSize_ is 3, then
-      1. Append U+0041 (LATIN CAPITAL LETTER A) to _lastChunkSize_ a total of (4 - _lastChunkSize_) times.
-    1. Let _bytes_ be the unique sequence of bytes such that applying the base64 encoding specified in section 4 of RFC 4648 to that sequence would produce _input_.
-    1. Let _byteLength_ be the length _bytes_.
+    1. Else if _lastChunkSize_ is 2, then
+      1. Append U+0041 (LATIN CAPITAL LETTER A) to _input_ twice.
+    1. Else if _lastChunkSize_ is 3, then
+      1. Append U+0041 (LATIN CAPITAL LETTER A) to _input_.
+    1. Let _bytes_ be the unique (possibly empty) sequence of bytes such that applying the base64 encoding specified in section 4 of RFC 4648 to that sequence would produce _input_.
+    1. Let _byteLength_ be the length of _bytes_.
     1. If _lastChunkSize_ is 2, then
       1. If _strict_ is *true* and _bytes_[_byteLength_ - 2] is not 0, throw a *SyntaxError* exception.
       1. Remove the final 2 elements of _bytes_.
+      1. Set _byteLength_ to _byteLength_ - 2.
     1. Else if _lastChunkSize_ is 3, then
       1. If _strict_ is *true* and _bytes_[_byteLength_ - 1] is not 0, throw a *SyntaxError* exception.
       1. Remove the final element of _bytes_.
+      1. Set _byteLength_ to _byteLength_ - 1.
     1. Let _result_ be ? AllocateTypedArray(*"Uint8Array"*, %Uint8Array%, %Uint8Array.prototype%, _byteLength_).
     1. Set the value at each index of _result_.[[ViewedArrayBuffer]].[[ArrayBufferData]] to the value at the corresponding index of _bytes_.
     1. Return _result_.

@@ -49,7 +49,7 @@ let illegal = [
   'Z＋==', // U+FF0B 'Fullwidth Plus Sign'
   'Zg\u00A0==', // nbsp
   'Zg\u2009==', // thin space
-  'Zg\u2028==', // thin space
+  'Zg\u2028==', // line separator
 ];
 test('illegal characters', async t => {
   for (let string of malformedPadding) {
