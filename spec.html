@@ -25,10 +25,10 @@ contributors: Kevin Gibbons
     1. If _alphabet_ is not a String, throw a *TypeError* exception.
     1. If _alphabet_ is neither *"base64"* nor *"base64url"*, throw a *TypeError* exception.
     1. If _alphabet_ is *"base64"*, then
-      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64 encoding specified in section 4 of RFC 4648. Padding is included.
+      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64 encoding specified in section 4 of <a href="https://datatracker.ietf.org/doc/html/rfc4648">RFC 4648</a>. Padding is included.
     1. Else,
       1. Assert: _alphabet_ is *"base64url"*.
-      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64url encoding specified in section 5 of RFC 4648. Padding is included.
+      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64url encoding specified in section 5 of <a href="https://datatracker.ietf.org/doc/html/rfc4648">RFC 4648</a>. Padding is included.
     1. Return CodePointsToString(_outAscii_).
   </emu-alg>
 </emu-clause>
@@ -85,7 +85,7 @@ contributors: Kevin Gibbons
       1. Append U+0041 (LATIN CAPITAL LETTER A) to _input_ twice.
     1. Else if _lastChunkSize_ is 3, then
       1. Append U+0041 (LATIN CAPITAL LETTER A) to _input_.
-    1. Let _bytes_ be the unique (possibly empty) sequence of bytes resulting from decoding _input_ as base64 (such that applying the base64 encoding specified in section 4 of RFC 4648 to _bytes_ would produce _input_).
+    1. Let _bytes_ be the unique (possibly empty) sequence of bytes resulting from decoding _input_ as base64 (such that applying the base64 encoding specified in section 4 of <a href="https://datatracker.ietf.org/doc/html/rfc4648">RFC 4648</a> to _bytes_ would produce _input_).
     1. Let _byteLength_ be the length of _bytes_.
     1. If _lastChunkSize_ is 2, then
       1. If _strict_ is *true* and _bytes_[_byteLength_ - 2] is not 0, throw a *SyntaxError* exception.
