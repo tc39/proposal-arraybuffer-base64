@@ -85,7 +85,7 @@ contributors: Kevin Gibbons
       1. Append U+0041 (LATIN CAPITAL LETTER A) to _input_ twice.
     1. Else if _lastChunkSize_ is 3, then
       1. Append U+0041 (LATIN CAPITAL LETTER A) to _input_.
-    1. Let _bytes_ be the unique (possibly empty) sequence of bytes such that applying the base64 encoding specified in section 4 of RFC 4648 to that sequence would produce _input_.
+    1. Let _bytes_ be the unique (possibly empty) sequence of bytes resulting from decoding _input_ as base64 (such that applying the base64 encoding specified in section 4 of RFC 4648 to _bytes_ would produce _input_).
     1. Let _byteLength_ be the length of _bytes_.
     1. If _lastChunkSize_ is 2, then
       1. If _strict_ is *true* and _bytes_[_byteLength_ - 2] is not 0, throw a *SyntaxError* exception.
