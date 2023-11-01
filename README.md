@@ -34,7 +34,7 @@ This would add `Uint8Array.prototype.toBase64`/`Uint8Array.prototype.toHex` and 
 
 An options bag argument for the base64 methods allows specifying the alphabet as either `base64` or `base64url`.
 
-When encoding, the options bag also allows specifying `strict: false` (the default) or `strict: true`. When using `strict: false`, whitespace is legal and padding is optional. When using `strict: true`, whitespace is forbidden and standard padding (including any overflow bits in the last character being 0) is enforced - i.e., only [canonical](https://datatracker.ietf.org/doc/html/rfc4648#section-3.5) encodings are allowed.
+When decoding, the options bag also allows specifying `strict: false` (the default) or `strict: true`. When using `strict: false`, whitespace is legal and padding is optional. When using `strict: true`, whitespace is forbidden and standard padding (including any overflow bits in the last character being 0) is enforced - i.e., only [canonical](https://datatracker.ietf.org/doc/html/rfc4648#section-3.5) encodings are allowed.
 
 ## Streaming
 

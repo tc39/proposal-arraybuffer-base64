@@ -1,5 +1,8 @@
 import './playground/polyfill-install.mjs';
 
+// We hardcode this denylist set because it's smaller than the alphabet.
+// But the algorithm would work just as well with an allowlist,
+// which would be robust against any future changes to the set of whitespace.
 let whitespace = new Set(['\u0009', '\u000A', '\u000C', '\u000D', '\u0020']);
 
 // This mirrors the somewhat awkward TextDecoder API.
