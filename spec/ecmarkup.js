@@ -450,23 +450,66 @@ Menu.prototype.revealInToc = function (path) {
 };
 
 function findActiveClause(root, path) {
-  let clauses = getChildClauses(root);
   path = path || [];
 
-  for (let $clause of clauses) {
-    let rect = $clause.getBoundingClientRect();
+  let visibleClauses = getVisibleClauses(root, path);
+  let midpoint = Math.floor(window.innerHeight / 2);
+
+  for (let [$clause, path] of visibleClauses) {
+    let { top: clauseTop, bottom: clauseBottom } = $clause.getBoundingClientRect();
+    let isFullyVisibleAboveTheFold =
+      clauseTop > 0 && clauseTop < midpoint && clauseBottom < window.innerHeight;
+    if (isFullyVisibleAboveTheFold) {
+      return path;
+    }
+  }
+
+  visibleClauses.sort(([, pathA], [, pathB]) => pathB.length - pathA.length);
+  for (let [$clause, path] of visibleClauses) {
+    let { top: clauseTop, bottom: clauseBottom } = $clause.getBoundingClientRect();
     let $header = $clause.querySelector('h1');
+    let clauseStyles = getComputedStyle($clause);
     let marginTop = Math.max(
-      parseInt(getComputedStyle($clause)['margin-top']),
+      0,
+      parseInt(clauseStyles['margin-top']),
       parseInt(getComputedStyle($header)['margin-top'])
     );
-
-    if (rect.top - marginTop <= 1 && rect.bottom > 0) {
-      return findActiveClause($clause, path.concat($clause)) || path;
+    let marginBottom = Math.max(0, parseInt(clauseStyles['margin-bottom']));
+    let crossesMidpoint =
+      clauseTop - marginTop <= midpoint && clauseBottom + marginBottom >= midpoint;
+    if (crossesMidpoint) {
+      return path;
     }
   }
 
   return path;
+}
+
+function getVisibleClauses(root, path) {
+  let childClauses = getChildClauses(root);
+  path = path || [];
+
+  let result = [];
+
+  let seenVisibleClause = false;
+  for (let $clause of childClauses) {
+    let { top: clauseTop, bottom: clauseBottom } = $clause.getBoundingClientRect();
+    let isPartiallyVisible =
+      (clauseTop > 0 && clauseTop < window.innerHeight) ||
+      (clauseBottom > 0 && clauseBottom < window.innerHeight) ||
+      (clauseTop < 0 && clauseBottom > window.innerHeight);
+
+    if (isPartiallyVisible) {
+      seenVisibleClause = true;
+      let innerPath = path.concat($clause);
+      result.push([$clause, innerPath]);
+      result.push(...getVisibleClauses($clause, innerPath));
+    } else if (seenVisibleClause) {
+      break;
+    }
+  }
+
+  return result;
 }
 
 function* getChildClauses(root) {
@@ -763,6 +806,10 @@ let referencePane = {
     this.$header.appendChild(this.$headerText);
     this.$headerRefId = document.createElement('a');
     this.$header.appendChild(this.$headerRefId);
+    this.$header.addEventListener('pointerdown', e => {
+      this.dragStart(e);
+    });
+
     this.$closeButton = document.createElement('span');
     this.$closeButton.setAttribute('id', 'references-pane-close');
     this.$closeButton.addEventListener('click', () => {
@@ -771,16 +818,16 @@ let referencePane = {
     this.$header.appendChild(this.$closeButton);
 
     this.$pane.appendChild(this.$header);
-    let tableContainer = document.createElement('div');
-    tableContainer.setAttribute('id', 'references-pane-table-container');
+    this.$tableContainer = document.createElement('div');
+    this.$tableContainer.setAttribute('id', 'references-pane-table-container');
 
     this.$table = document.createElement('table');
     this.$table.setAttribute('id', 'references-pane-table');
 
     this.$tableBody = this.$table.createTBody();
 
-    tableContainer.appendChild(this.$table);
-    this.$pane.appendChild(tableContainer);
+    this.$tableContainer.appendChild(this.$table);
+    this.$pane.appendChild(this.$tableContainer);
 
     menu.$specContainer.appendChild(this.$container);
   },
@@ -802,7 +849,7 @@ let referencePane = {
     let previousId;
     let previousCell;
     let dupCount = 0;
-    this.$headerRefId.textContent = '#' + entry.id;
+    this.$headerRefId.innerHTML = getKey(entry);
     this.$headerRefId.setAttribute('href', makeLinkToId(entry.id));
     this.$headerRefId.style.display = 'inline';
     (entry.referencingIds || [])
@@ -833,6 +880,7 @@ let referencePane = {
     this.$table.removeChild(this.$tableBody);
     this.$tableBody = newBody;
     this.$table.appendChild(this.$tableBody);
+    this.autoSize();
   },
 
   showSDOs(sdos, alternativeId) {
@@ -879,6 +927,34 @@ let referencePane = {
     this.$table.removeChild(this.$tableBody);
     this.$tableBody = newBody;
     this.$table.appendChild(this.$tableBody);
+    this.autoSize();
+  },
+
+  autoSize() {
+    this.$tableContainer.style.height =
+      Math.min(250, this.$table.getBoundingClientRect().height) + 'px';
+  },
+
+  dragStart(pointerDownEvent) {
+    let startingMousePos = pointerDownEvent.clientY;
+    let startingHeight = this.$tableContainer.getBoundingClientRect().height;
+    let moveListener = pointerMoveEvent => {
+      if (pointerMoveEvent.buttons === 0) {
+        removeListeners();
+        return;
+      }
+      let desiredHeight = startingHeight - (pointerMoveEvent.clientY - startingMousePos);
+      this.$tableContainer.style.height = Math.max(0, desiredHeight) + 'px';
+    };
+    let listenerOptions = { capture: true, passive: true };
+    let removeListeners = () => {
+      document.removeEventListener('pointermove', moveListener, listenerOptions);
+      this.$header.removeEventListener('pointerup', removeListeners, listenerOptions);
+      this.$header.removeEventListener('pointercancel', removeListeners, listenerOptions);
+    };
+    document.addEventListener('pointermove', moveListener, listenerOptions);
+    this.$header.addEventListener('pointerup', removeListeners, listenerOptions);
+    this.$header.addEventListener('pointercancel', removeListeners, listenerOptions);
   },
 };
 
@@ -909,7 +985,9 @@ let Toolbox = {
       referencePane.showReferencesFor(this.entry);
     });
     this.$container.appendChild(this.$permalink);
+    this.$container.appendChild(document.createTextNode(' '));
     this.$container.appendChild(this.$pinLink);
+    this.$container.appendChild(document.createTextNode(' '));
     this.$container.appendChild(this.$refsLink);
     document.body.appendChild(this.$outer);
   },
@@ -1160,12 +1238,40 @@ function getActiveTocPaths() {
   return [...menu.$menu.querySelectorAll('.active')].map(getTocPath).filter(p => p != null);
 }
 
-function loadStateFromSessionStorage() {
-  if (!window.sessionStorage || typeof menu === 'undefined' || window.navigating) {
+function initTOCExpansion(visibleItemLimit) {
+  // Initialize to a reasonable amount of TOC expansion:
+  // * Expand any full-breadth nesting level up to visibleItemLimit.
+  // * Expand any *single-item* level while under visibleItemLimit (even if that pushes over it).
+
+  // Limit to initialization by bailing out if any parent item is already expanded.
+  const tocItems = Array.from(document.querySelectorAll('#menu-toc li'));
+  if (tocItems.some(li => li.classList.contains('active') && li.querySelector('li'))) {
     return;
   }
-  if (sessionStorage.referencePaneState != null) {
-    let state = JSON.parse(sessionStorage.referencePaneState);
+
+  const selfAndSiblings = maybe => Array.from(maybe?.parentNode.children ?? []);
+  let currentLevelItems = selfAndSiblings(tocItems[0]);
+  let availableCount = visibleItemLimit - currentLevelItems.length;
+  while (availableCount > 0 && currentLevelItems.length) {
+    const nextLevelItems = currentLevelItems.flatMap(li => selfAndSiblings(li.querySelector('li')));
+    availableCount -= nextLevelItems.length;
+    if (availableCount > 0 || currentLevelItems.length === 1) {
+      // Expand parent items of the next level down (i.e., current-level items with children).
+      for (const ol of new Set(nextLevelItems.map(li => li.parentNode))) {
+        ol.closest('li').classList.add('active');
+      }
+    }
+    currentLevelItems = nextLevelItems;
+  }
+}
+
+function initState() {
+  if (typeof menu === 'undefined' || window.navigating) {
+    return;
+  }
+  const storage = typeof sessionStorage !== 'undefined' ? sessionStorage : Object.create(null);
+  if (storage.referencePaneState != null) {
+    let state = JSON.parse(storage.referencePaneState);
     if (state != null) {
       if (state.type === 'ref') {
         let entry = menu.search.biblio.byId[state.id];
@@ -1179,39 +1285,36 @@ function loadStateFromSessionStorage() {
           referencePane.showSDOsBody(sdos, state.id);
         }
       }
-      delete sessionStorage.referencePaneState;
+      delete storage.referencePaneState;
     }
   }
 
-  if (sessionStorage.activeTocPaths != null) {
-    document
-      .getElementById('menu-toc')
-      .querySelectorAll('.active')
-      .forEach(e => {
-        e.classList.remove('active');
-      });
-    let active = JSON.parse(sessionStorage.activeTocPaths);
+  if (storage.activeTocPaths != null) {
+    document.querySelectorAll('#menu-toc li.active').forEach(li => li.classList.remove('active'));
+    let active = JSON.parse(storage.activeTocPaths);
     active.forEach(activateTocPath);
-    delete sessionStorage.activeTocPaths;
+    delete storage.activeTocPaths;
+  } else {
+    initTOCExpansion(20);
   }
 
-  if (sessionStorage.searchValue != null) {
-    let value = JSON.parse(sessionStorage.searchValue);
+  if (storage.searchValue != null) {
+    let value = JSON.parse(storage.searchValue);
     menu.search.$searchBox.value = value;
     menu.search.search(value);
-    delete sessionStorage.searchValue;
+    delete storage.searchValue;
   }
 
-  if (sessionStorage.tocScroll != null) {
-    let tocScroll = JSON.parse(sessionStorage.tocScroll);
+  if (storage.tocScroll != null) {
+    let tocScroll = JSON.parse(storage.tocScroll);
     menu.$toc.scrollTop = tocScroll;
-    delete sessionStorage.tocScroll;
+    delete storage.tocScroll;
   }
 }
 
-document.addEventListener('DOMContentLoaded', loadStateFromSessionStorage);
+document.addEventListener('DOMContentLoaded', initState);
 
-window.addEventListener('pageshow', loadStateFromSessionStorage);
+window.addEventListener('pageshow', initState);
 
 window.addEventListener('beforeunload', () => {
   if (!window.sessionStorage || typeof menu === 'undefined') {
@@ -1349,6 +1452,78 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+'use strict';
+
+// Update superscripts to not suffer misinterpretation when copied and pasted as plain text.
+// For example,
+// * Replace `10<sup>3</sup>` with
+//   `10<span aria-hidden="true">**</span><sup>3</sup>`
+//   so it gets pasted as `10**3` rather than `103`.
+// * Replace `10<sup>-<var>x</var></sup>` with
+//   `10<span aria-hidden="true">**</span><sup>-<var>x</var></sup>`
+//   so it gets pasted as `10**-x` rather than `10-x`.
+// * Replace `2<sup><var>a</var> + 1</sup>` with
+//   `2<span …>**(</span><sup><var>a</var> + 1</sup><span …>)</span>`
+//   so it gets pasted as `2**(a + 1)` rather than `2a + 1`.
+
+function makeExponentPlainTextSafe(sup) {
+  // Change a <sup> only if it appears to be an exponent:
+  // * text-only and contains only mathematical content (not e.g. `1<sup>st</sup>`)
+  // * contains only <var>s and internal links (e.g.
+  //   `2<sup><emu-xref><a href="#ℝ">ℝ</a></emu-xref>(_y_)</sup>`)
+  const isText = [...sup.childNodes].every(node => node.nodeType === 3);
+  const text = sup.textContent;
+  if (isText) {
+    if (!/^[0-9. 𝔽ℝℤ()=*×/÷±+\u2212-]+$/u.test(text)) {
+      return;
+    }
+  } else {
+    if (sup.querySelector('*:not(var, emu-xref, :scope emu-xref a)')) {
+      return;
+    }
+  }
+
+  let prefix = '**';
+  let suffix = '';
+
+  // Add wrapping parentheses unless they are already present
+  // or this is a simple (possibly signed) integer or single-variable exponent.
+  const skipParens =
+    /^[±+\u2212-]?(?:[0-9]+|\p{ID_Start}\p{ID_Continue}*)$/u.test(text) ||
+    // Split on parentheses and remember them; the resulting parts must
+    // start and end empty (i.e., with open/close parentheses)
+    // and increase depth to 1 only at the first parenthesis
+    // to e.g. wrap `(a+1)*(b+1)` but not `((a+1)*(b+1))`.
+    text
+      .trim()
+      .split(/([()])/g)
+      .reduce((depth, s, i, parts) => {
+        if (s === '(') {
+          return depth > 0 || i === 1 ? depth + 1 : NaN;
+        } else if (s === ')') {
+          return depth > 0 ? depth - 1 : NaN;
+        } else if (s === '' || (i > 0 && i < parts.length - 1)) {
+          return depth;
+        }
+        return NaN;
+      }, 0) === 0;
+  if (!skipParens) {
+    prefix += '(';
+    suffix += ')';
+  }
+
+  sup.insertAdjacentHTML('beforebegin', `<span aria-hidden="true">${prefix}</span>`);
+  if (suffix) {
+    sup.insertAdjacentHTML('afterend', `<span aria-hidden="true">${suffix}</span>`);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('sup:not(.text)').forEach(sup => {
+    makeExponentPlainTextSafe(sup);
+  });
+});
+
 let sdoMap = JSON.parse(`{}`);
-let biblio = JSON.parse(`{"refsByClause":{"sec-uint8array.prototype.tobase64":["_ref_0","_ref_1"],"sec-uint8array.prototype.topartialbase64":["_ref_2","_ref_3","_ref_4"],"sec-uint8array.prototype.tohex":["_ref_5"],"sec-uint8array.frombase64":["_ref_6","_ref_7"],"sec-uint8array.frompartialbase64":["_ref_8","_ref_9","_ref_10"],"sec-uint8array.fromhex":["_ref_11"]},"entries":[{"type":"clause","id":"sec-uint8array.prototype.tobase64","title":"Uint8Array.prototype.toBase64 ( [ options ] )","titleHTML":"Uint8Array.prototype.toBase64 ( [ <var>options</var> ] )","number":"1"},{"type":"clause","id":"sec-uint8array.prototype.topartialbase64","title":"Uint8Array.prototype.toPartialBase64 ( [ options ] )","titleHTML":"Uint8Array.prototype.toPartialBase64 ( [ <var>options</var> ] )","number":"2"},{"type":"clause","id":"sec-uint8array.prototype.tohex","titleHTML":"Uint8Array.prototype.toHex ( )","number":"3"},{"type":"clause","id":"sec-uint8array.frombase64","title":"Uint8Array.fromBase64 ( value [ , options ] )","titleHTML":"Uint8Array.fromBase64 ( <var>value</var> [ , <var>options</var> ] )","number":"4"},{"type":"clause","id":"sec-uint8array.frompartialbase64","title":"Uint8Array.fromPartialBase64 ( value [ , options ] )","titleHTML":"Uint8Array.fromPartialBase64 ( <var>value</var> [ , <var>options</var> ] )","number":"5"},{"type":"clause","id":"sec-uint8array.fromhex","title":"Uint8Array.fromHex ( value )","titleHTML":"Uint8Array.fromHex ( <var>value</var> )","number":"6"},{"type":"op","aoid":"GetUint8ArrayBytes","refId":"sec-getuint8arraybytes"},{"type":"clause","id":"sec-getuint8arraybytes","title":"GetUint8ArrayBytes ( ta )","titleHTML":"GetUint8ArrayBytes ( <var>ta</var> )","number":"7","referencingIds":["_ref_0","_ref_2","_ref_4","_ref_5"]},{"type":"op","aoid":"GetStringForBinaryEncoding","refId":"sec-getstringforbinaryencoding"},{"type":"clause","id":"sec-getstringforbinaryencoding","title":"GetStringForBinaryEncoding ( arg )","titleHTML":"GetStringForBinaryEncoding ( <var>arg</var> )","number":"8","referencingIds":["_ref_6","_ref_8","_ref_10","_ref_11"]},{"type":"op","aoid":"GetOptionsObject","refId":"sec-getoptionsobject"},{"type":"clause","id":"sec-getoptionsobject","title":"GetOptionsObject ( options )","titleHTML":"GetOptionsObject ( <var>options</var> )","number":"9","referencingIds":["_ref_1","_ref_3","_ref_7","_ref_9"]}]}`);
+let biblio = JSON.parse(`{"refsByClause":{"sec-uint8array.prototype.tobase64":["_ref_0","_ref_1"],"sec-uint8array.prototype.tohex":["_ref_2"],"sec-uint8array.frombase64":["_ref_3","_ref_4"]},"entries":[{"type":"clause","id":"sec-uint8array.prototype.tobase64","title":"Uint8Array.prototype.toBase64 ( [ options ] )","titleHTML":"Uint8Array.prototype.toBase64 ( [ <var>options</var> ] )","number":"1"},{"type":"clause","id":"sec-uint8array.prototype.tohex","titleHTML":"Uint8Array.prototype.toHex ( )","number":"2"},{"type":"term","term":"standard base64 alphabet","id":"standard-base64-alphabet","referencingIds":["_ref_4"]},{"type":"clause","id":"sec-uint8array.frombase64","title":"Uint8Array.fromBase64 ( string [ , options ] )","titleHTML":"Uint8Array.fromBase64 ( <var>string</var> [ , <var>options</var> ] )","number":"3"},{"type":"clause","id":"sec-uint8array.fromhex","title":"Uint8Array.fromHex ( string )","titleHTML":"Uint8Array.fromHex ( <var>string</var> )","number":"4"},{"type":"op","aoid":"GetUint8ArrayBytes","refId":"sec-getuint8arraybytes"},{"type":"clause","id":"sec-getuint8arraybytes","title":"GetUint8ArrayBytes ( ta )","titleHTML":"GetUint8ArrayBytes ( <var>ta</var> )","number":"5","referencingIds":["_ref_0","_ref_2"]},{"type":"op","aoid":"GetOptionsObject","refId":"sec-getoptionsobject"},{"type":"clause","id":"sec-getoptionsobject","title":"GetOptionsObject ( options )","titleHTML":"GetOptionsObject ( <var>options</var> )","number":"6","referencingIds":["_ref_1","_ref_3"]}]}`);
 ;let usesMultipage = false

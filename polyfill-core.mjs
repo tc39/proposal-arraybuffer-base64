@@ -20,110 +20,106 @@ function assert(condition, message) {
   }
 }
 
-function alphabetFromIdentifier(alphabet) {
-  if (alphabet === 'base64') {
-    return base64Characters;
-  } else if (alphabet === 'base64url') {
-    return base64UrlCharacters;
-  } else {
-    throw new TypeError('expected alphabet to be either "base64" or "base64url"');
+function getOptions(options) {
+  if (typeof options === 'undefined') {
+    return Object.create(null);
   }
+  if (options && typeof options === 'object') {
+    return options;
+  }
+  throw new TypeError('options is not object');
 }
 
-export function uint8ArrayToBase64(arr, alphabetIdentifier = 'base64', more = false, origExtra = null) {
+export function uint8ArrayToBase64(arr, options) {
   checkUint8Array(arr);
-  let alphabet = alphabetFromIdentifier(alphabetIdentifier);
-  more = !!more;
-  if (origExtra != null) {
-    checkUint8Array(origExtra);
-    // a more efficient algorithm would avoid copying
-    // but writing that out is unclear / a pain
-    // the difference is not observable
-    let copy = new Uint8Array(arr.length + origExtra.length);
-    copy.set(origExtra);
-    copy.set(arr, origExtra.length);
-    arr = copy;
+  let opts = getOptions(options);
+  let alphabet = opts.alphabet;
+  if (typeof alphabet === 'undefined') {
+    alphabet = 'base64';
   }
+  if (alphabet !== 'base64' && alphabet !== 'base64url') {
+    throw new TypeError('expected alphabet to be either "base64" or "base64url"');
+  }
+
+  let lookup = alphabet === 'base64' ? base64Characters : base64UrlCharacters;
   let result = '';
 
   let i = 0;
   for (; i + 2 < arr.length; i += 3) {
     let triplet = (arr[i] << 16) + (arr[i + 1] << 8) + arr[i + 2];
     result +=
-      alphabet[(triplet >> 18) & 63] +
-      alphabet[(triplet >> 12) & 63] +
-      alphabet[(triplet >> 6) & 63] +
-      alphabet[triplet & 63];
+      lookup[(triplet >> 18) & 63] +
+      lookup[(triplet >> 12) & 63] +
+      lookup[(triplet >> 6) & 63] +
+      lookup[triplet & 63];
   }
-  if (more) {
-    let extra = arr.slice(i); // TODO should this be a view, or a copy?
-    return { result, extra };
-  } else {
-    if (i + 2 === arr.length) {
-      let triplet = (arr[i] << 16) + (arr[i + 1] << 8);
-      result +=
-        alphabet[(triplet >> 18) & 63] +
-        alphabet[(triplet >> 12) & 63] +
-        alphabet[(triplet >> 6) & 63] +
-        '=';
-    } else if (i + 1 === arr.length) {
-      let triplet = arr[i] << 16;
-      result +=
-        alphabet[(triplet >> 18) & 63] +
-        alphabet[(triplet >> 12) & 63] +
-        '==';
-    }
-    return { result, extra: null };
+  if (i + 2 === arr.length) {
+    let triplet = (arr[i] << 16) + (arr[i + 1] << 8);
+    result +=
+      lookup[(triplet >> 18) & 63] +
+      lookup[(triplet >> 12) & 63] +
+      lookup[(triplet >> 6) & 63] +
+      '=';
+  } else if (i + 1 === arr.length) {
+    let triplet = arr[i] << 16;
+    result +=
+      lookup[(triplet >> 18) & 63] +
+      lookup[(triplet >> 12) & 63] +
+      '==';
   }
+  return result;
 }
 
-export function base64ToUint8Array(str, alphabetIdentifier = 'base64', more = false, origExtra = null) {
-  if (typeof str !== 'string') {
-    throw new TypeError('expected str to be a string');
+export function base64ToUint8Array(string, options) {
+  if (typeof string !== 'string') {
+    throw new TypeError('expected input to be a string');
   }
-  let alphabet = alphabetFromIdentifier(alphabetIdentifier);
-  more = !!more;
-  if (origExtra != null) {
-    if (typeof origExtra !== 'string') {
-      throw new TypeError('expected extra to be a string');
-    }
-    str = origExtra + str;
+  let opts = getOptions(options);
+  let alphabet = opts.alphabet;
+  if (typeof alphabet === 'undefined') {
+    alphabet = 'base64';
   }
-  let map = new Map(alphabet.split('').map((c, i) => [c, i]));
+  if (alphabet !== 'base64' && alphabet !== 'base64url') {
+    throw new TypeError('expected alphabet to be either "base64" or "base64url"');
+  }
+  let strict = !!opts.strict;
+  let input = string;
 
-  let extra;
-  if (more) {
-    let padding = str.length % 4;
-    if (padding === 0) {
-      extra = '';
-    } else {
-      extra = str.slice(-padding);
-      str = str.slice(0, -padding)
-    }
-  } else {
-    // todo opt-in optional padding
-    if (str.length % 4 !== 0) {
-      throw new Error('not correctly padded');
-    }
-    extra = null;
+  if (!strict) {
+    input = input.replaceAll(/[\u0009\u000A\u000C\u000D\u0020]/g, '');
   }
-  assert(str.length % 4 === 0, 'str.length % 4 === 0');
-  if (str.endsWith('==')) {
-    str = str.slice(0, -2);
-  } else if (str.endsWith('=')) {
-    str = str.slice(0, -1);
+  if (input.length % 4 === 0) {
+    if (input.length > 0 && input.at(-1) === '=') {
+      input = input.slice(0, -1);
+      if (input.length > 0 && input.at(-1) === '=') {
+        input = input.slice(0, -1);
+      }
+    }
+  } else if (strict) {
+    throw new SyntaxError('not correctly padded');
   }
+
+  let map = new Map((alphabet === 'base64' ? base64Characters : base64UrlCharacters).split('').map((c, i) => [c, i]));
+  if ([...input].some(c => !map.has(c))) {
+    let bad = [...input].filter(c => !map.has(c));
+    throw new SyntaxError(`contains illegal character(s) ${JSON.stringify(bad)}`);
+  }
+
+  let lastChunkSize = input.length % 4;
+  if (lastChunkSize === 1) {
+    throw new SyntaxError('bad length');
+  } else if (lastChunkSize === 2 || lastChunkSize === 3) {
+    input += 'A'.repeat(4 - lastChunkSize);
+  }
+  assert(input.length % 4 === 0);
 
   let result = [];
   let i = 0;
-  for (; i + 3 < str.length; i += 4) {
-    let c1 = str[i];
-    let c2 = str[i + 1];
-    let c3 = str[i + 2];
-    let c4 = str[i + 3];
-    if ([c1, c2, c3, c4].some(c => !map.has(c))) {
-      throw new Error('bad character');
-    }
+  for (; i < input.length; i += 4) {
+    let c1 = input[i];
+    let c2 = input[i + 1];
+    let c3 = input[i + 2];
+    let c4 = input[i + 3];
     let triplet =
       (map.get(c1) << 18) +
       (map.get(c2) << 12) +
@@ -136,42 +132,20 @@ export function base64ToUint8Array(str, alphabetIdentifier = 'base64', more = fa
       triplet & 255
     );
   }
-  // TODO if we want to be _really_ pedantic, following the RFC, we should enforce the extra 2-4 bits are 0
-  if (i + 2 === str.length) {
-    // the `==` case
-    let c1 = str[i];
-    let c2 = str[i + 1];
-    if ([c1, c2].some(c => !map.has(c))) {
-      throw new Error('bad character');
+
+  if (lastChunkSize === 2) {
+    if (strict && result.at(-2) !== 0) {
+      throw new SyntaxError('extra bits');
     }
-    let triplet =
-      (map.get(c1) << 18) +
-      (map.get(c2) << 12);
-    result.push((triplet >> 16) & 255);
-  } else if (i + 3 === str.length) {
-    // the `=` case
-    let c1 = str[i];
-    let c2 = str[i + 1];
-    let c3 = str[i + 2];
-    if ([c1, c2, c3].some(c => !map.has(c))) {
-      throw new Error('bad character');
+    result.splice(-2, 2);
+  } else if (lastChunkSize === 3) {
+    if (strict && result.at(-1) !== 0) {
+      throw new SyntaxError('extra bits');
     }
-    let triplet =
-      (map.get(c1) << 18) +
-      (map.get(c2) << 12) +
-      (map.get(c3) << 6);
-    result.push(
-      (triplet >> 16) & 255,
-      (triplet >> 8) & 255,
-    );
-  } else {
-    assert(i === str.length);
+    result.pop();
   }
 
-  return {
-    result: new Uint8Array(result),
-    extra,
-  };
+  return new Uint8Array(result);
 }
 
 export function uint8ArrayToHex(arr) {
@@ -183,19 +157,19 @@ export function uint8ArrayToHex(arr) {
   return out;
 }
 
-export function hexToUint8Array(str) {
-  if (typeof str !== 'string') {
-    throw new TypeError('expected str to be a string');
+export function hexToUint8Array(string) {
+  if (typeof string !== 'string') {
+    throw new TypeError('expected string to be a string');
   }
-  if (str.length % 2 !== 0) {
-    throw new SyntaxError('str should be an even number of characters');
+  if (string.length % 2 !== 0) {
+    throw new SyntaxError('string should be an even number of characters');
   }
-  if (/[^0-9a-zA-Z]/.test(str)) {
-    throw new SyntaxError('str should only contain hex characters');
+  if (/[^0-9a-zA-Z]/.test(string)) {
+    throw new SyntaxError('string should only contain hex characters');
   }
-  let out = new Uint8Array(str.length / 2);
+  let out = new Uint8Array(string.length / 2);
   for (let i = 0; i < out.length; ++i) {
-    out[i] = parseInt(str.slice(i * 2, i * 2 + 2), 16);
+    out[i] = parseInt(string.slice(i * 2, i * 2 + 2), 16);
   }
   return out;
 }
