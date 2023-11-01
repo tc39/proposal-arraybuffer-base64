@@ -96,7 +96,7 @@ See issues [#7](https://github.com/tc39/proposal-arraybuffer-base64/issues/7), [
 
 ### Why not just use `atob` and `btoa`?
 
-Those methods are take and consume strings, rather than translating between a string and a Uint8Array.
+Those methods take and consume strings, rather than translating between a string and a Uint8Array.
 
 ### Why not TextEncoder?
 
