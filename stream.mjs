@@ -1,10 +1,5 @@
 import './playground/polyfill-install.mjs';
 
-// We hardcode this denylist set because it's smaller than the alphabet.
-// But the algorithm would work just as well with an allowlist,
-// which would be robust against any future changes to the set of whitespace.
-let whitespace = new Set(['\u0009', '\u000A', '\u000C', '\u000D', '\u0020']);
-
 // This mirrors the somewhat awkward TextDecoder API.
 // Better designs are of course possible.
 class Base64Decoder {
@@ -26,11 +21,18 @@ class Base64Decoder {
 
     let realCharacterCount = 0;
     let hasWhitespace = false;
-    for (let i = 0; i < chunk.length; ++i) {
-      if (whitespace.has(chunk[i])) {
-        hasWhitespace = true;
-      } else {
-        ++realCharacterCount;
+
+    if (options.strict) {
+      realCharacterCount = chunk.length;
+    } else {
+      for (let i = 0; i < chunk.length; ++i) {
+        // this check divides the set of legal characters into whitespace and non-whitespace.
+        // characters outside the set of legal characters will throw a decode error anyway, so it doesn't matter what they give
+        if (chunk[i] < '+') {
+          hasWhitespace = true;
+        } else {
+          ++realCharacterCount;
+        }
       }
     }
 
@@ -45,7 +47,7 @@ class Base64Decoder {
         let collected = 0;
         let i = chunk.length - 1;
         while (true) {
-          if (!whitespace.has(chunk[i])) {
+          if (chunk[i] >= '+') {
             ++collected;
             if (collected === extraCharacterCount) {
               break;
