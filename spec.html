@@ -49,7 +49,7 @@ contributors: Kevin Gibbons
 
 <emu-clause id="sec-uint8array.frombase64">
   <h1>Uint8Array.fromBase64 ( _string_ [ , _options_ ] )</h1>
-  <p>The <dfn id="standard-base64-alphabet">standard base64 alphabet</dfn> is a List whose elements are the code points corresponding to every letter and number in the Unicode Basic Latin block along with *"+"* and *"/"*; that is, it is StringToCodePoints(*"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/").</p>
+  <p>The <dfn id="standard-base64-alphabet">standard base64 alphabet</dfn> is a List whose elements are the code points corresponding to every letter and number in the Unicode Basic Latin block along with *"+"* and *"/"*; that is, it is StringToCodePoints(*"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"*).</p>
   <emu-alg>
     1. If _string_ is not a String, throw a *TypeError* exception.
     1. Let _opts_ be ? GetOptionsObject(_options_).
