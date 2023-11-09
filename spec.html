@@ -85,6 +85,7 @@ contributors: Kevin Gibbons
       1. Append U+0041 (LATIN CAPITAL LETTER A) to _input_ twice.
     1. Else if _lastChunkSize_ is 3, then
       1. Append U+0041 (LATIN CAPITAL LETTER A) to _input_.
+    1. Assert: The length of _input_ is now a multiple of 4.
     1. Let _bytes_ be the unique (possibly empty) sequence of bytes resulting from decoding _input_ as base64 (such that applying the base64 encoding specified in section 4 of <a href="https://datatracker.ietf.org/doc/html/rfc4648">RFC 4648</a> to _bytes_ would produce _input_).
     1. Let _byteLength_ be the length of _bytes_.
     1. If _lastChunkSize_ is 2, then
