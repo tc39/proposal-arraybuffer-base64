@@ -89,10 +89,12 @@ contributors: Kevin Gibbons
     1. Let _bytes_ be the unique (possibly empty) sequence of bytes resulting from decoding _input_ as base64 (such that applying the base64 encoding specified in section 4 of <a href="https://datatracker.ietf.org/doc/html/rfc4648">RFC 4648</a> to _bytes_ would produce _input_).
     1. Let _byteLength_ be the length of _bytes_.
     1. If _lastChunkSize_ is 2, then
+      1. Assert: _byteLength_ ≥ 3.
       1. If _strict_ is *true* and _bytes_[_byteLength_ - 2] is not 0, throw a *SyntaxError* exception.
       1. Remove the final 2 elements of _bytes_.
       1. Set _byteLength_ to _byteLength_ - 2.
     1. Else if _lastChunkSize_ is 3, then
+      1. Assert: _byteLength_ ≥ 3.
       1. If _strict_ is *true* and _bytes_[_byteLength_ - 1] is not 0, throw a *SyntaxError* exception.
       1. Remove the final element of _bytes_.
       1. Set _byteLength_ to _byteLength_ - 1.
