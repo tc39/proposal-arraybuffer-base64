@@ -70,10 +70,134 @@ export function uint8ArrayToBase64(arr, options) {
   return result;
 }
 
-export function base64ToUint8Array(string, options) {
-  if (typeof string !== 'string') {
-    throw new TypeError('expected input to be a string');
+function decodeChunk(chunk, alphabet, throwOnExtraBits) {
+  let actualChunkLength = chunk.length;
+  if (actualChunkLength < 4) {
+    chunk += actualChunkLength === 2 ? 'AA' : 'A';
   }
+
+  let map = new Map((alphabet === 'base64' ? base64Characters : base64UrlCharacters).split('').map((c, i) => [c, i]));
+
+  let c1 = chunk[0];
+  let c2 = chunk[1];
+  let c3 = chunk[2];
+  let c4 = chunk[3];
+  [c1, c2, c3, c4].forEach(c => {
+    if (!map.has(c)) {
+      throw new SyntaxError(`unexpected character ${JSON.stringify(c)}`);
+    }
+  });
+
+  let triplet =
+    (map.get(c1) << 18) +
+    (map.get(c2) << 12) +
+    (map.get(c3) << 6) +
+    map.get(c4);
+
+  let chunkBytes = [
+    (triplet >> 16) & 255,
+    (triplet >> 8) & 255,
+    triplet & 255
+  ];
+
+  if (actualChunkLength === 2) {
+    if (throwOnExtraBits && chunkBytes[1] !== 0) {
+      throw new SyntaxError('extra bits');
+    }
+    return [chunkBytes[0]];
+  } else if (actualChunkLength === 3) {
+    if (throwOnExtraBits && chunkBytes[2] !== 0) {
+      throw new SyntaxError('extra bits');
+    }
+    return [chunkBytes[0], chunkBytes[1]];
+  }
+  return chunkBytes;
+}
+
+function skipAsciiWhitespace(string, index) {
+  for (; index < string.length; ++index) {
+    if (!/[\u0009\u000A\u000C\u000D\u0020]/.test(string[index])) {
+      break;
+    }
+  }
+  return index;
+}
+
+function fromBase64(string, alphabet, lastChunkHandling, maxLength) {
+  if (maxLength === 0) {
+    return { read, bytes };
+  }
+
+  let read = 0;
+  let bytes = [];
+  let chunk = '';
+
+  let index = 0
+  while (true) {
+    index = skipAsciiWhitespace(string, index);
+    if (index === string.length) {
+      if (chunk.length > 0) {
+        if (lastChunkHandling === 'stop-before-partial') {
+          return { bytes, read };
+        } else if (lastChunkHandling === 'loose') {
+          if (chunk.length === 1) {
+            throw new SyntaxError('malformed padding: exactly one additional character');
+          }
+          bytes.push(...decodeChunk(chunk, alphabet, false));
+        } else {
+          assert(lastChunkHandling === 'strict');
+          throw new SyntaxError('missing padding');
+        }
+      }
+      return { bytes, read: string.length };
+    }
+    let char = string[index];
+    ++index;
+    if (char === '=') {
+      if (chunk.length < 2) {
+        throw new SyntaxError('padding is too early');
+      }
+      index = skipAsciiWhitespace(string, index);
+      if (chunk.length === 2) {
+        if (index === string.length) {
+          if (lastChunkHandling === 'stop-before-partial') {
+            // two characters then `=` then EOS: this is, technically, a partial chunk
+            return { bytes, read };
+          }
+          throw new SyntaxError('malformed padding - only one =');
+        }
+        if (string[index] === '=') {
+          ++index;
+          index = skipAsciiWhitespace(string, index);
+        }
+      }
+      if (index < string.length) {
+        throw new SyntaxError('unexpected character after padding');
+      }
+      bytes.push(...decodeChunk(chunk, alphabet, lastChunkHandling === 'strict'));
+      assert(bytes.length <= maxLength);
+      return { bytes, read: string.length };
+    }
+    let remainingBytes = maxLength - bytes.length;
+    if (remainingBytes === 1 && chunk.length === 2 || remainingBytes === 2 && chunk.length === 3) {
+      // special case: we can fit exactly the number of bytes currently represented by chunk, so we were just checking for `=`
+      return { bytes, read };
+    }
+
+    chunk += char;
+    if (chunk.length === 4) {
+      bytes.push(...decodeChunk(chunk, alphabet, false));
+      chunk = '';
+      read = index;
+      assert(bytes.length <= maxLength);
+      if (bytes.length === maxLength) {
+        return { bytes, read };
+      }
+    }
+  }
+}
+
+export function base64ToUint8Array(string, options, into) {
   let opts = getOptions(options);
   let alphabet = opts.alphabet;
   if (typeof alphabet === 'undefined') {
@@ -82,70 +206,35 @@ export function base64ToUint8Array(string, options) {
   if (alphabet !== 'base64' && alphabet !== 'base64url') {
     throw new TypeError('expected alphabet to be either "base64" or "base64url"');
   }
-  let strict = !!opts.strict;
-  let input = string;
-
-  if (!strict) {
-    input = input.replaceAll(/[\u0009\u000A\u000C\u000D\u0020]/g, '');
+  let lastChunkHandling = opts.lastChunkHandling;
+  if (typeof lastChunkHandling === 'undefined') {
+    lastChunkHandling = 'loose';
   }
-  if (input.length % 4 === 0) {
-    if (input.length > 0 && input.at(-1) === '=') {
-      input = input.slice(0, -1);
-      if (input.length > 0 && input.at(-1) === '=') {
-        input = input.slice(0, -1);
-      }
+  if (!['loose', 'strict', 'stop-before-partial'].includes(lastChunkHandling)) {
+    throw new TypeError('expected lastChunkHandling to be either "loose", "strict", or "stop-before-partial"');
+  }
+  let outputOffset = 0;
+  if (into) {
+    outputOffset = opts.outputOffset;
+    if (typeof outputOffset === 'undefined') {
+      outputOffset = 0;
+    } else if (typeof outputOffset !== 'number' || Math.round(outputOffset) !== outputOffset || outputOffset < 0 || outputOffset >= into.length) {
+      // TODO: do we want to accept negative wrap-around offsets? probably?
+      throw new RangeError('outputOffset must be an integer between 0 and into.length');
     }
-  } else if (strict) {
-    throw new SyntaxError('not correctly padded');
   }
 
-  let map = new Map((alphabet === 'base64' ? base64Characters : base64UrlCharacters).split('').map((c, i) => [c, i]));
-  if ([...input].some(c => !map.has(c))) {
-    let bad = [...input].filter(c => !map.has(c));
-    throw new SyntaxError(`contains illegal character(s) ${JSON.stringify(bad)}`);
+  let maxLength = into ? (into.length - outputOffset) : 2 ** 53 - 1;
+
+  let { bytes, read } = fromBase64(string, alphabet, lastChunkHandling, maxLength);
+
+  bytes = new Uint8Array(bytes);
+  if (into) {
+    assert(bytes.length <= into.length - outputOffset);
+    into.set(bytes, outputOffset);
   }
 
-  let lastChunkSize = input.length % 4;
-  if (lastChunkSize === 1) {
-    throw new SyntaxError('bad length');
-  } else if (lastChunkSize === 2 || lastChunkSize === 3) {
-    input += 'A'.repeat(4 - lastChunkSize);
-  }
-  assert(input.length % 4 === 0);
-
-  let result = [];
-  let i = 0;
-  for (; i < input.length; i += 4) {
-    let c1 = input[i];
-    let c2 = input[i + 1];
-    let c3 = input[i + 2];
-    let c4 = input[i + 3];
-    let triplet =
-      (map.get(c1) << 18) +
-      (map.get(c2) << 12) +
-      (map.get(c3) << 6) +
-      map.get(c4);
-
-    result.push(
-      (triplet >> 16) & 255,
-      (triplet >> 8) & 255,
-      triplet & 255
-    );
-  }
-
-  if (lastChunkSize === 2) {
-    if (strict && result.at(-2) !== 0) {
-      throw new SyntaxError('extra bits');
-    }
-    result.splice(-2, 2);
-  } else if (lastChunkSize === 3) {
-    if (strict && result.at(-1) !== 0) {
-      throw new SyntaxError('extra bits');
-    }
-    result.pop();
-  }
-
-  return new Uint8Array(result);
+  return { read, bytes };
 }
 
 export function uint8ArrayToHex(arr) {
@@ -157,7 +246,7 @@ export function uint8ArrayToHex(arr) {
   return out;
 }
 
-export function hexToUint8Array(string) {
+export function hexToUint8Array(string, options, into) {
   if (typeof string !== 'string') {
     throw new TypeError('expected string to be a string');
   }
@@ -167,9 +256,39 @@ export function hexToUint8Array(string) {
   if (/[^0-9a-fA-F]/.test(string)) {
     throw new SyntaxError('string should only contain hex characters');
   }
-  let out = new Uint8Array(string.length / 2);
-  for (let i = 0; i < out.length; ++i) {
-    out[i] = parseInt(string.slice(i * 2, i * 2 + 2), 16);
+
+  let outputOffset = 0;
+  if (into) {
+    let opts = getOptions(options);
+    outputOffset = opts.outputOffset;
+    if (typeof outputOffset === 'undefined') {
+      outputOffset = 0;
+    } else if (typeof outputOffset !== 'number' || Math.round(number) !== number || number < 0 || number >= into.length) {
+      // TODO: do we want to accept negative wrap-around offsets? probably?
+      throw new RangeError('outputOffset must be an integer between 0 and into.length');
+    }
   }
-  return out;
+  let maxLength = into ? (into.length - outputOffset) : 2 ** 53 - 1;
+
+  // TODO should hex allow whitespace?
+  // TODO should hex support lastChunkHandling? (only 'strict' or 'stop-before-partial')
+  let bytes = [];
+  let index = 0;
+  if (maxLength > 0) {
+    while (index < string.length) {
+      bytes.push(parseInt(string.slice(index, index + 2), 16));
+      index += 2;
+      if (bytes.length === maxLength) {
+        break;
+      }
+    }
+  }
+
+  bytes = new Uint8Array(bytes);
+  if (into) {
+    assert(bytes.length <= into.length - outputOffset);
+    into.set(bytes, outputOffset);
+  }
+
+  return { read: index, bytes };
 }
