@@ -83,11 +83,14 @@ export function base64ToUint8Array(string, options) {
     throw new TypeError('expected alphabet to be either "base64" or "base64url"');
   }
   let strict = !!opts.strict;
+  let onlyFullChunks = !!opts.onlyFullChunks;
   let input = string;
 
   if (!strict) {
     input = input.replaceAll(/[\u0009\u000A\u000C\u000D\u0020]/g, '');
   }
+
+  let extraBase64Chars = '';
   if (input.length % 4 === 0) {
     if (input.length > 0 && input.at(-1) === '=') {
       input = input.slice(0, -1);
@@ -95,6 +98,10 @@ export function base64ToUint8Array(string, options) {
         input = input.slice(0, -1);
       }
     }
+  } else if (onlyFullChunks) {
+    let cut = input.length - (input.length % 4);
+    extraBase64Chars = input.slice(cut);
+    input = input.slice(0, cut);
   } else if (strict) {
     throw new SyntaxError('not correctly padded');
   }
@@ -145,7 +152,11 @@ export function base64ToUint8Array(string, options) {
     result.pop();
   }
 
-  return new Uint8Array(result);
+  let ret = new Uint8Array(result);
+  if (onlyFullChunks) {
+    ret.extraBase64Chars = extraBase64Chars;
+  }
+  return ret;
 }
 
 export function uint8ArrayToHex(arr) {

@@ -3,74 +3,30 @@ import './playground/polyfill-install.mjs';
 // This mirrors the somewhat awkward TextDecoder API.
 // Better designs are of course possible.
 class Base64Decoder {
-  #options;
   #extra;
-  constructor(options) {
-    this.#options = options;
+  constructor() {
     this.#extra = '';
   }
 
   decode(chunk = '', options = {}) {
-    let stream = options.stream ?? false;
+    let opts = { ...options };
+    // match TextEncoder API
+    if (opts.stream) {
+      opts.onlyFullChunks = true;
+    }
     chunk = this.#extra + chunk;
     this.#extra = '';
-
-    if (!stream) {
-      return Uint8Array.fromBase64(chunk, this.#options);
-    }
-
-    let realCharacterCount = 0;
-    let hasWhitespace = false;
-
-    if (options.strict) {
-      realCharacterCount = chunk.length;
-    } else {
-      for (let i = 0; i < chunk.length; ++i) {
-        // this check divides the set of legal characters into whitespace and non-whitespace.
-        // characters outside the set of legal characters will throw a decode error anyway, so it doesn't matter what they give
-        if (chunk[i] < '+') {
-          hasWhitespace = true;
-        } else {
-          ++realCharacterCount;
-        }
-      }
-    }
-
-    // requires 1 additional pass over `chunk`, plus one additional copy of `chunk`
-    let extraCharacterCount = realCharacterCount % 4;
-    if (extraCharacterCount !== 0) {
-      if (!hasWhitespace) {
-        this.#extra = chunk.slice(-extraCharacterCount);
-        chunk = chunk.slice(0, -extraCharacterCount);
-      } else {
-        // need to do a bit more work to figure out where to slice
-        let collected = 0;
-        let i = chunk.length - 1;
-        while (true) {
-          if (chunk[i] >= '+') {
-            ++collected;
-            if (collected === extraCharacterCount) {
-              break;
-            }
-          }
-          --i;
-        }
-        this.#extra = chunk.slice(i);
-        chunk = chunk.slice(0, i);
-      }
-    }
-
-    return Uint8Array.fromBase64(chunk, this.#options);
+    let result = Uint8Array.fromBase64(chunk, opts);
+    this.#extra = result.extraBase64Chars ?? '';
+    return result;
   }
 }
 
 
 class Base64Encoder {
-  #options;
   #extra;
   #extraLength;
-  constructor(options) {
-    this.#options = options;
+  constructor() {
     this.#extra = new Uint8Array(3);
     this.#extraLength = 0;
   }
@@ -124,3 +80,6 @@ let encoder = new Base64Encoder();
 console.log(encoder.encode(Uint8Array.of(72, 101, 108, 108, 111), { stream: true }));
 console.log(encoder.encode(Uint8Array.of(32, 87, 111, 114, 108, 100), { stream: true }));
 console.log(encoder.encode());
+
+
+console.log(Uint8Array.fromBase64('SGVsbG8gV29ybGQ', { onlyFullChunks: true, strict: true }))

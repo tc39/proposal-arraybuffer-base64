@@ -58,23 +58,30 @@ contributors: Kevin Gibbons
     1. If _alphabet_ is not a String, throw a *TypeError* exception.
     1. If _alphabet_ is neither *"base64"* nor *"base64url"*, throw a *TypeError* exception.
     1. Let _strict_ be ToBoolean(? Get(_opts_, *"strict"*)).
+    1. Let _onlyFullChunks_ be ToBoolean(? Get(_opts_, *"onlyFullChunks"*)).
     1. NOTE: The order of validation and decoding in the algorithm below is not observable. Implementations are encouraged to perform them in whatever order is most efficient, possibly interleaving validation and stripping whitespace with decoding, as long as the behaviour is observably equivalent.
     1. Let _input_ be StringToCodePoints(_string_).
     1. If _alphabet_ is *"base64url"*, then
       1. If _input_ contains U+002B (PLUS SIGN) or U+002F (SOLIDUS), throw a *SyntaxError* exception.
       1. Replace all occurrences of U+002D (HYPHEN-MINUS) in _input_ with U+002B (PLUS SIGN).
       1. Replace all occurrences of U+005F (LOW LINE) in _input_ with U+002F (SOLIDUS).
-    1. NOTE: When _strict_ is *false*, the algorithm below is equivalent to the <a href="https://infra.spec.whatwg.org/#forgiving-base64-decode">forgiving-base64 decode</a> operation in HTML.
+    1. NOTE: When _strict_ is *false* and _onlyFullChunks_ is *false*, the algorithm below is equivalent to the <a href="https://infra.spec.whatwg.org/#forgiving-base64-decode">forgiving-base64 decode</a> operation in HTML.
     1. If _strict_ is *false*, then
       1. Remove all occurrences of U+0009 (TAB), U+000A (LF), U+000C (FF), U+000D (CR), and U+0020 (SPACE) from _input_.
     1. Let _inputLength_ be the length of _input_.
     1. If _inputLength_ modulo 4 is 0, then
+      1. Let _extraBase64Chars_ be the empty String..
       1. If _input_ is not empty and the last element of _input_ is U+003D (EQUALS SIGN), then
         1. Remove the last element of _input_.
         1. Set _inputLength_ to _inputLength_ - 1.
         1. If _input_ is not empty and the last element of _input_ is U+003D (EQUALS SIGN), then
           1. Remove the last element of _input_.
           1. Set _inputLength_ to _inputLength_ - 1.
+    1. Else if _onlyFullChunks_ is *true*, then
+      1. Let _cut_ be _inputLength_ - (_inputLength_ modulo 4).
+      1. Let _extraBase64Chars_ be the substring of _input_ from _cut_.
+      1. Set _input_ to the substring of _input_ from 0 to _cut_.
+      1. Set _inputLength_ to the length of _input_.
     1. Else,
       1. If _strict_ is *true*, throw a *SyntaxError* exception.
     1. If _input_ contains any elements which are not also elements of the standard base64 alphabet, throw a *SyntaxError* exception.
@@ -100,6 +107,8 @@ contributors: Kevin Gibbons
       1. Set _byteLength_ to _byteLength_ - 1.
     1. Let _result_ be ? AllocateTypedArray(*"Uint8Array"*, %Uint8Array%, %Uint8Array.prototype%, _byteLength_).
     1. Set the value at each index of _result_.[[ViewedArrayBuffer]].[[ArrayBufferData]] to the value at the corresponding index of _bytes_.
+    1. If _onlyFullChunks_ is *true*, then
+      1. Perform ! CreateDataPropertyOrThrow(_result_, *"extraBase64Chars"*, _extraBase64Chars_).
     1. Return _result_.
   </emu-alg>
 </emu-clause>

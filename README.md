@@ -36,9 +36,11 @@ An options bag argument for the base64 methods allows specifying the alphabet as
 
 When decoding, the options bag also allows specifying `strict: false` (the default) or `strict: true`. When using `strict: false`, whitespace is legal and padding is optional. When using `strict: true`, whitespace is forbidden and standard padding (including any overflow bits in the last character being 0) is enforced - i.e., only [canonical](https://datatracker.ietf.org/doc/html/rfc4648#section-3.5) encodings are allowed.
 
+For the decoder, passing `onlyFullChunks: true` will ensure that only full quartets of base64 characters are processed; any additional characters are returned in a string as an additional `extraBase64Chars` property on the resulting `Uint8Array`. Passing this option allows `strict: true` to handle inputs whose length is not a multiple of 4.
+
 ## Streaming
 
-There is no support for streaming. However, it is [relatively straightforward to do effeciently in userland](./stream.mjs) on top of this API, with support for all the same options as the underlying functions.
+There is no explicit support for streaming. However, it is [relatively straightforward to do effeciently in userland](./stream.mjs) on top of this API, with support for all the same options as the underlying functions.
 
 ## FAQ
 

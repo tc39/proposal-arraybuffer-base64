@@ -85,7 +85,8 @@ console.log(Uint8Array.fromHex(string));
 
 <h3>Options</h3>
 <p>The base64 methods take an optional options bag which allows specifying the alphabet as either "base64" (the default) or "base64url" (<a href="https://datatracker.ietf.org/doc/html/rfc4648#section-5">the URL-safe variant</a>).</p>
-<p>When encoding, the options bag also allows specifying <code>strict: false</code> (the default) or <code>strict: true</code>. When using <code>strict: false</code>, whitespace is legal and padding is optional. When using <code>strict: true</code>, whitespace is forbidden and standard padding (including any overflow bits in the last character being 0) is enforced - i.e., only <a href="https://datatracker.ietf.org/doc/html/rfc4648#section-3.5">canonical</a> encodings are allowed.</p>
+<p>When decoding, the options bag also allows specifying <code>strict: false</code> (the default) or <code>strict: true</code>. When using <code>strict: false</code>, whitespace is legal and padding is optional. When using <code>strict: true</code>, whitespace is forbidden and standard padding (including any overflow bits in the last character being 0) is enforced - i.e., only <a href="https://datatracker.ietf.org/doc/html/rfc4648#section-3.5">canonical</a> encodings are allowed.</p>
+<p>For the decoder, passing <code>onlyFullChunks: true</code> will ensure that only full quartets of base64 characters are processed; any additional characters are returned in a string as an additional <code>extraBase64Chars</code> property on the resulting <code>Uint8Array</code>. Passing this option allows <code>strict: true</code> to handle inputs whose length is not a multiple of 4.</p>
 <p>The hex methods do not have any options.</p>
 
 <pre class="language-js"><code class="language-js">
@@ -104,15 +105,19 @@ try {
   console.log('with strict: true, whitespace is rejected');
 }
 try {
-  Uint8Array.fromBase64('SGVsbG8gV29ybGQ', { strict: true });
-} catch {
-  console.log('with strict: true, padding is required');
-}
-try {
   Uint8Array.fromBase64('SGVsbG8gV29ybGR=', { strict: true });
 } catch {
   console.log('with strict: true, non-zero overflow bits are rejected');
 }
+try {
+  Uint8Array.fromBase64('SGVsbG8gV29ybGQ', { strict: true });
+} catch {
+  console.log('with strict: true, padding is required');
+}
+
+console.log(Uint8Array.fromBase64('SGVsbG8gV29ybGQ', { onlyFullChunks: true, strict: true }));
+// decodes the first 8 characters and returns the 3 extras as an additional property of the result
+// Uint8Array(9) [ 72, 101, 108, 108, 111, 32, 87, 111, 114, extraBase64Chars: 'bGQ' ]
 </code></pre>
 
 <h3>Streaming</h3>
