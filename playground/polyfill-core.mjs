@@ -164,7 +164,7 @@ export function hexToUint8Array(string) {
   if (string.length % 2 !== 0) {
     throw new SyntaxError('string should be an even number of characters');
   }
-  if (/[^0-9a-zA-Z]/.test(string)) {
+  if (/[^0-9a-fA-F]/.test(string)) {
     throw new SyntaxError('string should only contain hex characters');
   }
   let out = new Uint8Array(string.length / 2);
