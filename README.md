@@ -30,15 +30,36 @@ console.log(Uint8Array.fromHex(string));
 
 This would add `Uint8Array.prototype.toBase64`/`Uint8Array.prototype.toHex` and `Uint8Array.fromBase64`/`Uint8Array.fromHex` methods. The latter pair would throw if given a string which is not properly encoded.
 
-## Options
+## Base64 options
 
-An options bag argument for the base64 methods allows specifying the alphabet as either `base64` or `base64url`.
+Additional options are supplied in an options bag argument:
 
-When decoding, the options bag also allows specifying `strict: false` (the default) or `strict: true`. When using `strict: false`, whitespace is legal and padding is optional. When using `strict: true`, whitespace is forbidden and standard padding (including any overflow bits in the last character being 0) is enforced - i.e., only [canonical](https://datatracker.ietf.org/doc/html/rfc4648#section-3.5) encodings are allowed.
+- `alphabet`: Allows specifying the alphabet as either `base64` or `base64url`.
+
+- `lastChunkHandling`: Recall that base64 decoding operates on chunks of 4 characters at a time, but the input maybe have some characters which don't fit evenly into such a chunk of 4 characters. This option determines how the final chunk of characters should be handled. The three options are `"loose"` (the default), which treats the chunk as if it had any necessary `=` padding (but throws if this is not possible, i.e. there is exactly one extra character); `"strict"`, which enforces that the chunk has exactly 4 characters (counting `=` padding) and that [overflow bits](https://datatracker.ietf.org/doc/html/rfc4648#section-3.5) are 0; and `"stop-before-partial"`, which stops decoding before the final chunk unless the final chunk has exactly 4 characters.
+
+The hex methods do not take any options.
+
+## Writing to an existing Uint8Array
+
+The `Uint8Array.fromBase64Into` method allows writing to an existing Uint8Array. Like the [TextEncoder `encodeInto` method](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/encodeInto), it returns a `{ read, written }` pair.
+
+```js
+let target = new Uint8Array(8);
+let { read, written } = Uint8Array.fromBase64Into('Zm9vYmFy', target);
+assert.deepStrictEqual([...target], [102, 111, 111, 98, 97, 114, 0, 0]);
+assert.deepStrictEqual({ read, written }, { read: 8, written: 6 });
+```
+
+This method takes an optional final options bag with the same options as above.
+
+As with `encodeInto`, there is not explicit support for writing to specified offset of the target, but you can accomplish that by creating a subarray.
+
+`Uint8Array.fromHexInto` is the same except for hex.
 
 ## Streaming
 
-There is no support for streaming. However, it is [relatively straightforward to do effeciently in userland](./stream.mjs) on top of this API, with support for all the same options as the underlying functions.
+There is no explicit support for streaming. However, it is [relatively straightforward to do effeciently in userland](./stream.mjs) on top of this API, with support for all the same options as the underlying functions.
 
 ## FAQ
 
@@ -68,17 +89,17 @@ For hex, both lowercase and uppercase characters (including mixed within the sam
 
 ### How is `=` padding handled?
 
-Padding is always generated. The base64 decoder does not require it to be present unless `strict: true` is specified; however, if it is present, it must be well-formed (i.e., once stripped of whitespace the length of the string must be a multiple of 4, and there can be 1 or 2 padding `=` characters).
+Padding is always generated. The base64 decoder allows specifying how to handle inputs without it with the `lastChunkHandling` option.
 
 ### How are the extra padding bits handled?
 
 If the length of your input data isn't exactly a multiple of 3 bytes, then encoding it will use either 2 or 3 base64 characters to encode the final 1 or 2 bytes. Since each base64 character is 6 bits, this means you'll be using either 12 or 18 bits to represent 8 or 16 bits, which means you have an extra 4 or 2 bits which don't encode anything.
 
-Per [the RFC](https://datatracker.ietf.org/doc/html/rfc4648#section-3.5), decoders MAY reject input strings where the padding bits are non-zero. Here, non-zero padding bits are silently ignored when `strict: false` (the default), and are an error when `strict: true`.
+Per [the RFC](https://datatracker.ietf.org/doc/html/rfc4648#section-3.5), decoders MAY reject input strings where the padding bits are non-zero. Here, non-zero padding bits are silently ignored unless `lastChunkHandling: "strict"` is specified.
 
 ### How is whitespace handled?
 
-The encoders do not output whitespace. The hex decoder does not allow it as input. The base64 decoder allows [ASCII whitespace](https://infra.spec.whatwg.org/#ascii-whitespace) anywhere in the string as long as `strict: true` is not specified.
+The encoders do not output whitespace. The hex decoder does not allow it as input. The base64 decoder allows [ASCII whitespace](https://infra.spec.whatwg.org/#ascii-whitespace) anywhere in the string.
 
 ### How are other characters handled?
 
@@ -107,7 +128,3 @@ That's also been the consensus when it's come up [previously](https://discourse.
 ### What if I just want to encode a portion of an ArrayBuffer?
 
 Uint8Arrays can be partial views of an underlying buffer, so you can create such a view and invoke `.toBase64` on it.
-
-### What if I want to decode a Base64 or hex string into an existing Typed Array or ArrayBuffer?
-
-While that is a reasonable things to want, I think it need not be included in the initial version of this API. We can add it later if demand proves high. Until then, copying slices of memory (e.g. using `target.set(chunk, offset)`) is quite fast.

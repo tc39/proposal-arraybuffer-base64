@@ -3,74 +3,33 @@ import './playground/polyfill-install.mjs';
 // This mirrors the somewhat awkward TextDecoder API.
 // Better designs are of course possible.
 class Base64Decoder {
-  #options;
-  #extra;
-  constructor(options) {
-    this.#options = options;
-    this.#extra = '';
-  }
+  #extra = '';
 
   decode(chunk = '', options = {}) {
-    let stream = options.stream ?? false;
+    let opts = { ...options };
+    // match TextEncoder API
+    if (opts.stream) {
+      opts.lastChunkHandling = 'stop-before-partial';
+    }
     chunk = this.#extra + chunk;
     this.#extra = '';
-
-    if (!stream) {
-      return Uint8Array.fromBase64(chunk, this.#options);
-    }
-
-    let realCharacterCount = 0;
-    let hasWhitespace = false;
-
-    if (options.strict) {
-      realCharacterCount = chunk.length;
-    } else {
-      for (let i = 0; i < chunk.length; ++i) {
-        // this check divides the set of legal characters into whitespace and non-whitespace.
-        // characters outside the set of legal characters will throw a decode error anyway, so it doesn't matter what they give
-        if (chunk[i] < '+') {
-          hasWhitespace = true;
-        } else {
-          ++realCharacterCount;
-        }
-      }
-    }
-
-    // requires 1 additional pass over `chunk`, plus one additional copy of `chunk`
-    let extraCharacterCount = realCharacterCount % 4;
-    if (extraCharacterCount !== 0) {
-      if (!hasWhitespace) {
-        this.#extra = chunk.slice(-extraCharacterCount);
-        chunk = chunk.slice(0, -extraCharacterCount);
-      } else {
-        // need to do a bit more work to figure out where to slice
-        let collected = 0;
-        let i = chunk.length - 1;
-        while (true) {
-          if (chunk[i] >= '+') {
-            ++collected;
-            if (collected === extraCharacterCount) {
-              break;
-            }
-          }
-          --i;
-        }
-        this.#extra = chunk.slice(i);
-        chunk = chunk.slice(0, i);
-      }
-    }
-
-    return Uint8Array.fromBase64(chunk, this.#options);
+    // for simplicity, allocate new memory every time
+    // the calculation below is guaranteed to be enough,
+    // but may be too much if there is whitespace
+    // if you're really concerned about memory, a TextDecoder style API is a bad choice
+    let buffer = new Uint8Array(Math.ceil(chunk.length * 3 / 4));
+    let { read, written } = Uint8Array.fromBase64Into(chunk, buffer, opts);
+    buffer = buffer.subarray(0, written);
+    this.#extra = chunk.slice(read);
+    return buffer;
   }
 }
 
 
 class Base64Encoder {
-  #options;
   #extra;
   #extraLength;
-  constructor(options) {
-    this.#options = options;
+  constructor() {
     this.#extra = new Uint8Array(3);
     this.#extraLength = 0;
   }
@@ -114,9 +73,9 @@ class Base64Encoder {
 
 let decoder = new Base64Decoder();
 
-console.log(decoder.decode('SG  Vsb', { stream: true }));
-console.log(decoder.decode('G8gV29ybGR', { stream: true }));
-console.log(decoder.decode());
+console.log(decoder.decode('SG Vsb ', { stream: true }));
+console.log(decoder.decode('G8gV29ybGR ', { stream: true }));
+console.log(decoder.decode(''));
 
 
 let encoder = new Base64Encoder();

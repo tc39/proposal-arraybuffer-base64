@@ -1,12 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert';
 
-import {
-  uint8ArrayToBase64,
-  base64ToUint8Array,
-  uint8ArrayToHex,
-  hexToUint8Array,
-} from './playground/polyfill-core.mjs';
+import './playground/polyfill-install.mjs';
 
 let stringToBytes = str => new TextEncoder().encode(str);
 
@@ -23,10 +18,10 @@ let standardBase64Vectors = [
 test('standard vectors', async t => {
   for (let [string, result] of standardBase64Vectors) {
     await t.test(JSON.stringify(string), () => {
-      assert.strictEqual(uint8ArrayToBase64(stringToBytes(string)), result);
+      assert.strictEqual(stringToBytes(string).toBase64(), result);
 
-      assert.deepStrictEqual(base64ToUint8Array(result), stringToBytes(string));
-      assert.deepStrictEqual(base64ToUint8Array(result, { strict: true }), stringToBytes(string));
+      assert.deepStrictEqual(Uint8Array.fromBase64(result), stringToBytes(string));
+      assert.deepStrictEqual(Uint8Array.fromBase64(result, { lastChunkHandling: 'strict' }), stringToBytes(string));
     });
   }
 });
@@ -35,8 +30,8 @@ let malformedPadding = ['=', 'Zg=', 'Z===', 'Zm8==', 'Zm9v='];
 test('malformed padding', async t => {
   for (let string of malformedPadding) {
     await t.test(JSON.stringify(string), () => {
-      assert.throws(() => base64ToUint8Array(string), SyntaxError);
-      assert.throws(() => base64ToUint8Array(string, { strict: true }), SyntaxError);
+      assert.throws(() => Uint8Array.fromBase64(string), SyntaxError);
+      assert.throws(() => Uint8Array.fromBase64(string, { lastChunkHandling: 'strict' }), SyntaxError);
     });
   }
 });
@@ -54,8 +49,8 @@ let illegal = [
 test('illegal characters', async t => {
   for (let string of malformedPadding) {
     await t.test(JSON.stringify(string), () => {
-      assert.throws(() => base64ToUint8Array(string), SyntaxError);
-      assert.throws(() => base64ToUint8Array(string, { strict: true }), SyntaxError);
+      assert.throws(() => Uint8Array.fromBase64(string), SyntaxError);
+      assert.throws(() => Uint8Array.fromBase64(string, { lastChunkHandling: 'strict' }), SyntaxError);
     });
   }
 });
@@ -71,24 +66,153 @@ let onlyNonStrict = [
 test('only valid in non-strict', async t => {
   for (let [encoded, decoded] of onlyNonStrict) {
     await t.test(JSON.stringify(encoded), () => {
-      assert.deepStrictEqual(base64ToUint8Array(encoded), decoded);
-      assert.throws(() => base64ToUint8Array(encoded, { strict: true }), SyntaxError);
+      assert.deepStrictEqual(Uint8Array.fromBase64(encoded), decoded);
+      assert.throws(() => Uint8Array.fromBase64(encoded, { lastChunkHandling: 'strict' }), SyntaxError);
     });
   }
 });
 
 test('alphabet-specific strings', async t => {
   let standardOnly = 'x+/y';
+
   await t.test(JSON.stringify(standardOnly), () => {
-    assert.deepStrictEqual(base64ToUint8Array(standardOnly), Uint8Array.of(0xc7, 0xef, 0xf2));
-    assert.deepStrictEqual(base64ToUint8Array(standardOnly, { alphabet: 'base64' }), Uint8Array.of(0xc7, 0xef, 0xf2));
-    assert.throws(() => base64ToUint8Array(standardOnly, { alphabet: 'base64url' }), SyntaxError);
+    assert.deepStrictEqual(Uint8Array.fromBase64(standardOnly), Uint8Array.of(0xc7, 0xef, 0xf2));
+    assert.deepStrictEqual(Uint8Array.fromBase64(standardOnly, { alphabet: 'base64' }), Uint8Array.of(0xc7, 0xef, 0xf2));
+    assert.throws(() => Uint8Array.fromBase64(standardOnly, { alphabet: 'base64url' }), SyntaxError);
   });
 
   let urlOnly = 'x-_y';
   await t.test(JSON.stringify(urlOnly), () => {
-    assert.deepStrictEqual(base64ToUint8Array(urlOnly, { alphabet: 'base64url' }), Uint8Array.of(0xc7, 0xef, 0xf2));
-    assert.throws(() => base64ToUint8Array(urlOnly), SyntaxError);
-    assert.throws(() => base64ToUint8Array(urlOnly, { alphabet: 'base64' }), SyntaxError);
+    assert.deepStrictEqual(Uint8Array.fromBase64(urlOnly, { alphabet: 'base64url' }), Uint8Array.of(0xc7, 0xef, 0xf2));
+    assert.throws(() => Uint8Array.fromBase64(urlOnly), SyntaxError);
+    assert.throws(() => Uint8Array.fromBase64(urlOnly, { alphabet: 'base64' }), SyntaxError);
+  });
+});
+
+test('writing to an existing buffer', async t => {
+  let foobarInput = 'Zm9vYmFy';
+  let foobaInput = 'Zm9vYmE';
+  let foobarOutput = [102, 111, 111, 98, 97, 114];
+
+  await t.test('buffer exact', () => {
+    let output = new Uint8Array(6);
+    let { read, written } = Uint8Array.fromBase64Into(foobarInput, output);
+    assert.deepStrictEqual([...output], foobarOutput);
+    assert.deepStrictEqual({ read, written }, { read: 8, written: 6 });
+  });
+
+  await t.test('buffer too large', () => {
+    let output = new Uint8Array(8);
+    let { read, written } = Uint8Array.fromBase64Into(foobarInput, output);
+    assert.deepStrictEqual([...output], [...foobarOutput, 0, 0]);
+    assert.deepStrictEqual({ read, written }, { read: 8, written: 6 });
+  });
+
+  await t.test('buffer too small', () => {
+    let output = new Uint8Array(5);
+    let { read, written } = Uint8Array.fromBase64Into(foobarInput, output);
+    assert.deepStrictEqual([...output], [...foobarOutput.slice(0, 3), 0, 0]);
+    assert.deepStrictEqual({ read, written }, { read: 4, written: 3 });
+  });
+
+  await t.test('buffer exact, padded', () => {
+    let output = new Uint8Array(5);
+    let { read, written } = Uint8Array.fromBase64Into(foobaInput + '=', output);
+    assert.deepStrictEqual([...output], foobarOutput.slice(0, 5));
+    assert.deepStrictEqual({ read, written }, { read: 8, written: 5 });
+  });
+
+  await t.test('buffer exact, not padded', () => {
+    let output = new Uint8Array(5);
+    let { read, written } = Uint8Array.fromBase64Into(foobaInput, output);
+    assert.deepStrictEqual([...output], foobarOutput.slice(0, 5));
+    assert.deepStrictEqual({ read, written }, { read: 7, written: 5 });
+  });
+
+  await t.test('buffer exact, padded, stop-before-partial', () => {
+    let output = new Uint8Array(5);
+    let { read, written } = Uint8Array.fromBase64Into(foobaInput + '=', output , { lastChunkHandling: 'stop-before-partial' });
+    assert.deepStrictEqual([...output], foobarOutput.slice(0, 5));
+    assert.deepStrictEqual({ read, written }, { read: 8, written: 5 });
+  });
+
+  await t.test('buffer exact, not padded, stop-before-partial', () => {
+    let output = new Uint8Array(5);
+    let { read, written } = Uint8Array.fromBase64Into(foobaInput, output , { lastChunkHandling: 'stop-before-partial' });
+    assert.deepStrictEqual([...output], [...foobarOutput.slice(0, 3), 0, 0]);
+    assert.deepStrictEqual({ read, written }, { read: 4, written: 3 });
+  });
+
+  await t.test('buffer too small, padded', () => {
+    let output = new Uint8Array(4);
+    let { read, written } = Uint8Array.fromBase64Into(foobaInput + '=', output);
+    assert.deepStrictEqual([...output], [...foobarOutput.slice(0, 3), 0]);
+    assert.deepStrictEqual({ read, written }, { read: 4, written: 3 });
+  });
+
+  await t.test('buffer too large, trailing whitespace', () => {
+    let output = new Uint8Array(8);
+    let { read, written } = Uint8Array.fromBase64Into(foobarInput + ' '.repeat(10), output);
+    assert.deepStrictEqual([...output], [...foobarOutput, 0, 0]);
+    assert.deepStrictEqual({ read, written }, { read: 18, written: 6 });
+  });
+
+  await t.test('buffer too large, not padded, trailing whitespace', () => {
+    let output = new Uint8Array(8);
+    let { read, written } = Uint8Array.fromBase64Into(foobaInput + ' '.repeat(10), output);
+    assert.deepStrictEqual([...output], [...foobarOutput.slice(0, 5), 0, 0, 0]);
+    assert.deepStrictEqual({ read, written }, { read: 17, written: 5 });
+  });
+});
+
+test('stop-before-partial', async t => {
+  let foobaInput = 'Zm9vYmE';
+  let foobarOutput = [102, 111, 111, 98, 97, 114];
+
+  await t.test('no padding', () => {
+    let output = Uint8Array.fromBase64(foobaInput, { lastChunkHandling: 'stop-before-partial' });
+    assert.deepStrictEqual([...output], foobarOutput.slice(0, 3));
+  });
+
+  await t.test('padding', () => {
+    let output = Uint8Array.fromBase64(foobaInput + '=', { lastChunkHandling: 'stop-before-partial' });
+    assert.deepStrictEqual([...output], foobarOutput.slice(0, 5));
+  });
+
+  await t.test('no padding, trailing whitespace', () => {
+    let output = new Uint8Array(8);
+    let { read, written } = Uint8Array.fromBase64Into(foobaInput + ' '.repeat(10), output, { lastChunkHandling: 'stop-before-partial' });
+    assert.deepStrictEqual([...output], [...foobarOutput.slice(0, 3), 0, 0, 0, 0, 0]);
+    assert.deepStrictEqual({ read, written }, { read: 4, written: 3 });
+  });
+});
+
+test('hex', async t => {
+  let encoded = 'deadBEEF';
+  let decoded = [222, 173, 190, 239];
+
+  await t.test('basic decode', () => {
+    assert.deepStrictEqual([...Uint8Array.fromHex(encoded)], decoded);
+  });
+
+  await t.test('decode into, exact', () => {
+    let output = new Uint8Array(4);
+    let { read, written } = Uint8Array.fromHexInto(encoded, output);
+    assert.deepStrictEqual([...output], decoded);
+    assert.deepStrictEqual({ read, written }, { read: 8, written: 4 });
+  });
+
+  await t.test('decode into, buffer too large', () => {
+    let output = new Uint8Array(6);
+    let { read, written } = Uint8Array.fromHexInto(encoded, output);
+    assert.deepStrictEqual([...output], [...decoded, 0, 0]);
+    assert.deepStrictEqual({ read, written }, { read: 8, written: 4 });
+  });
+
+  await t.test('decode into, buffer too small', () => {
+    let output = new Uint8Array(3);
+    let { read, written } = Uint8Array.fromHexInto(encoded, output);
+    assert.deepStrictEqual([...output], decoded.slice(0, 3));
+    assert.deepStrictEqual({ read, written }, { read: 6, written: 3 });
   });
 });
