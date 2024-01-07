@@ -18,12 +18,13 @@ contributors: Kevin Gibbons
   <h1>Uint8Array.prototype.toBase64 ( [ _options_ ] )</h1>
   <emu-alg>
     1. Let _O_ be the *this* value.
-    1. Let _toEncode_ be ? GetUint8ArrayBytes(_O_).
+    1. Perform ? ValidateUint8Array(_O_).
     1. Let _opts_ be ? GetOptionsObject(_options_).
     1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
     1. If _alphabet_ is not a String, throw a *TypeError* exception.
     1. If _alphabet_ is neither *"base64"* nor *"base64url"*, throw a *TypeError* exception.
+    1. Let _toEncode_ be ? GetUint8ArrayBytes(_O_).
     1. If _alphabet_ is *"base64"*, then
       1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64 encoding specified in section 4 of <a href="https://datatracker.ietf.org/doc/html/rfc4648">RFC 4648</a>. Padding is included.
     1. Else,
@@ -37,6 +38,7 @@ contributors: Kevin Gibbons
   <h1>Uint8Array.prototype.toHex ( )</h1>
   <emu-alg>
     1. Let _O_ be the *this* value.
+    1. Perform ? ValidateUint8Array(_O_).
     1. Let _toEncode_ be ? GetUint8ArrayBytes(_O_).
     1. Let _out_ be the empty String.
     1. For each byte _byte_ of _toEncode_, do
@@ -141,16 +143,28 @@ contributors: Kevin Gibbons
   </emu-alg>
 </emu-clause>
 
-<emu-clause id="sec-getuint8arraybytes" type="abstract operation">
+<emu-clause id="sec-validateuint8array" type="abstract operation">
   <h1>
-    GetUint8ArrayBytes (
+    ValidateUint8Array (
       _ta_: an ECMAScript language value,
-    ): either a normal completion containing a List of byte values or a throw completion
+    ): either a normal completion containing ~unused~ or a throw completion
   </h1>
   <dl class="header"></dl>
   <emu-alg>
     1. Perform ? RequireInternalSlot(_ta_, [[TypedArrayName]]).
     1. If _ta_.[[TypedArrayName]] is not *"Uint8Array"*, throw a *TypeError* exception.
+    1. Return ~unused~.
+  </emu-alg>
+</emu-clause>
+
+<emu-clause id="sec-getuint8arraybytes" type="abstract operation">
+  <h1>
+    GetUint8ArrayBytes (
+      _ta_: a Uint8Array,
+    ): either a normal completion containing a List of byte values or a throw completion
+  </h1>
+  <dl class="header"></dl>
+  <emu-alg>
     1. Let _buffer_ be _ta_.[[ViewedArrayBuffer]].
     1. If IsDetachedBuffer(_buffer_) is *true*, throw a *TypeError* exception.
     1. Let _block_ be _buffer_.[[ArrayBufferData]].
