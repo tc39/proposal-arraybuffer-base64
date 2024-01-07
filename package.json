@@ -6,7 +6,8 @@
     "build-spec": "mkdir -p dist/spec && ecmarkup --lint-spec --strict --load-biblio @tc39/ecma262-biblio --verbose --mark-effects spec.html --assets-dir dist/spec dist/spec/index.html",
     "build": "npm run build-playground && npm run build-spec",
     "format": "emu-format --write spec.html",
-    "check-format": "emu-format --check spec.html"
+    "check-format": "emu-format --check spec.html",
+    "test": "node --test"
   },
   "dependencies": {
     "@tc39/ecma262-biblio": "^2.1.2663",
