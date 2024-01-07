@@ -31,11 +31,11 @@ Uint8Array.fromHex = function (string) {
   return hexToUint8Array(string).bytes;
 };
 
-Uint8Array.fromHexInto = function (string, into) {
+Uint8Array.fromHexInto = function (string, into, options) {
   if (typeof string !== 'string') {
     throw new TypeError('expected input to be a string');
   }
   checkUint8Array(into);
-  let { read, bytes } = hexToUint8Array(string, into);
+  let { read, bytes } = hexToUint8Array(string, options, into);
   return { read, written: bytes.length };
 };

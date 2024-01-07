@@ -213,15 +213,25 @@ export function base64ToUint8Array(string, options, into) {
   if (!['loose', 'strict', 'stop-before-partial'].includes(lastChunkHandling)) {
     throw new TypeError('expected lastChunkHandling to be either "loose", "strict", or "stop-before-partial"');
   }
+  let outputOffset = 0;
+  if (into) {
+    outputOffset = opts.outputOffset;
+    if (typeof outputOffset === 'undefined') {
+      outputOffset = 0;
+    } else if (typeof outputOffset !== 'number' || Math.round(outputOffset) !== outputOffset || outputOffset < 0 || outputOffset >= into.length) {
+      // TODO: do we want to accept negative wrap-around offsets? probably?
+      throw new RangeError('outputOffset must be an integer between 0 and into.length');
+    }
+  }
 
-  let maxLength = into ? into.length : 2 ** 53 - 1;
+  let maxLength = into ? (into.length - outputOffset) : 2 ** 53 - 1;
 
   let { bytes, read } = fromBase64(string, alphabet, lastChunkHandling, maxLength);
 
   bytes = new Uint8Array(bytes);
   if (into) {
-    assert(bytes.length <= into.length);
-    into.set(bytes);
+    assert(bytes.length <= into.length - outputOffset);
+    into.set(bytes, outputOffset);
   }
 
   return { read, bytes };
@@ -236,7 +246,7 @@ export function uint8ArrayToHex(arr) {
   return out;
 }
 
-export function hexToUint8Array(string, into) {
+export function hexToUint8Array(string, options, into) {
   if (typeof string !== 'string') {
     throw new TypeError('expected string to be a string');
   }
@@ -247,7 +257,18 @@ export function hexToUint8Array(string, into) {
     throw new SyntaxError('string should only contain hex characters');
   }
 
-  let maxLength = into ? into.length : 2 ** 53 - 1;
+  let outputOffset = 0;
+  if (into) {
+    let opts = getOptions(options);
+    outputOffset = opts.outputOffset;
+    if (typeof outputOffset === 'undefined') {
+      outputOffset = 0;
+    } else if (typeof outputOffset !== 'number' || Math.round(number) !== number || number < 0 || number >= into.length) {
+      // TODO: do we want to accept negative wrap-around offsets? probably?
+      throw new RangeError('outputOffset must be an integer between 0 and into.length');
+    }
+  }
+  let maxLength = into ? (into.length - outputOffset) : 2 ** 53 - 1;
 
   // TODO should hex allow whitespace?
   // TODO should hex support lastChunkHandling? (only 'strict' or 'stop-before-partial')
@@ -265,8 +286,8 @@ export function hexToUint8Array(string, into) {
 
   bytes = new Uint8Array(bytes);
   if (into) {
-    assert(bytes.length <= into.length);
-    into.set(bytes);
+    assert(bytes.length <= into.length - outputOffset);
+    into.set(bytes, outputOffset);
   }
 
   return { read: index, bytes };
