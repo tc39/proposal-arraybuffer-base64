@@ -81,21 +81,15 @@ contributors: Kevin Gibbons
     1. Let _lastChunkHandling_ be ? Get(_opts_, *"lastChunkHandling"*).
     1. If _lastChunkHandling_ is *undefined*, set _lastChunkHandling_ to *"loose"*.
     1. If _lastChunkHandling_ is not one of *"loose"*, *"strict"*, or *"stop-before-partial"*, throw a *TypeError* exception.
-    1. Let _outputOffset_ be ? Get(_opts_, *"outputOffset"*).
-    1. If _outputOffset_ is *undefined*, set _outputOffset_ to *+0*<sub>𝔽</sub>.
-    1. If _outputOffset_ is not an integral Number, throw a *RangeError* exception.
-    1. Set _outputOffset_ to ℝ(_outputOffset_).
     1. Let _taRecord_ be MakeTypedArrayWithBufferWitnessRecord(_into_, ~seq-cst~).
     1. Let _byteLength_ be TypedArrayByteLength(_taRecord_).
-    1. If _outputOffset_ < 0 or _outputOffset_ ≥ _byteLength_, then
-      1. Throw a *RangeError* exception.
-    1. Let _maxLength_ be _byteLength_ - _outputOffset_.
+    1. Let _maxLength_ be _byteLength_.
     1. Let _result_ be ? FromBase64(_string_, _alphabet_, _lastChunkHandling_, _maxLength_).
     1. Let _bytes_ be _result_.[[Bytes]].
     1. Let _written_ be the length of _bytes_.
     1. NOTE: FromBase64 does not invoke any user code, so the ArrayBuffer backing _into_ cannot have been detached or shrunk.
     1. Assert: _written_ ≤ _byteLength_.
-    1. Let _offset_ be _into_.[[ByteOffset]] + _outputOffset_.
+    1. Let _offset_ be _into_.[[ByteOffset]].
     1. Let _index_ be 0.
     1. Repeat, while _index_ < _written_,
       1. Let _byte_ be _bytes_[i].
@@ -121,27 +115,20 @@ contributors: Kevin Gibbons
 </emu-clause>
 
 <emu-clause id="sec-uint8array.fromhexinto">
-  <h1>Uint8Array.fromHexInto ( _string_, _into_ [ , _options_ ] )</h1>
+  <h1>Uint8Array.fromHexInto ( _string_, _into_ )</h1>
   <emu-alg>
     1. If _string_ is not a String, throw a *TypeError* exception.
     1. Perform ? RequireInternalSlot(_into_, [[TypedArrayName]]).
     1. If _into_.[[TypedArrayName]] is not *"Uint8Array"*, throw a *TypeError* exception.
-    1. Let _opts_ be ? GetOptionsObject(_options_).
-    1. Let _outputOffset_ be ? Get(_opts_, *"outputOffset"*).
-    1. If _outputOffset_ is *undefined*, set _outputOffset_ to *+0*<sub>𝔽</sub>.
-    1. If _outputOffset_ is not an integral Number, throw a *RangeError* exception.
-    1. Set _outputOffset_ to ℝ(_outputOffset_).
     1. Let _taRecord_ be MakeTypedArrayWithBufferWitnessRecord(_into_, ~seq-cst~).
     1. Let _byteLength_ be TypedArrayByteLength(_taRecord_).
-    1. If _outputOffset_ < 0 or _outputOffset_ ≥ _byteLength_, then
-      1. Throw a *RangeError* exception.
-    1. Let _maxLength_ be _byteLength_ - _outputOffset_.
+    1. Let _maxLength_ be _byteLength_.
     1. Let _result_ be ? FromHex(_string_, _maxLength_).
     1. Let _bytes_ be _result_.[[Bytes]].
     1. Let _written_ be the length of _bytes_.
     1. NOTE: FromHex does not invoke any user code, so the ArrayBuffer backing _into_ cannot have been detached or shrunk.
     1. Assert: _written_ ≤ _byteLength_.
-    1. Let _offset_ be _into_.[[ByteOffset]] + _outputOffset_.
+    1. Let _offset_ be _into_.[[ByteOffset]].
     1. Let _index_ be 0.
     1. Repeat, while _index_ < _written_,
       1. Let _byte_ be _bytes_[i].

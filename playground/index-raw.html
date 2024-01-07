@@ -114,7 +114,7 @@ try {
 <h3>Writing to an existing Uint8Array</h3>
 <p>The <code>Uint8Array.fromBase64Into</code> method allows writing to an existing Uint8Array. Like the <a href="https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/encodeInto">TextEncoder <code>encodeInto</code> method</a>, it returns a <code>{ read, written }</code> pair.</p>
 
-<p>This method takes an optional final options bag with the same options as above, plus an <code>outputOffset</code> option which allows specifying a position in the target array to write to without needing to create a subarray.</p>
+<p>This method takes an optional final options bag with the same options as above.</p>
 
 <pre class="language-js"><code class="language-js">
 let target = new Uint8Array(7);

@@ -51,7 +51,9 @@ assert.deepStrictEqual([...target], [102, 111, 111, 98, 97, 114, 0, 0]);
 assert.deepStrictEqual({ read, written }, { read: 8, written: 6 });
 ```
 
-This method takes an optional final options bag with the same options as above, plus an `outputOffset` option which allows specifying a position in the target array to write to without needing to create a subarray.
+This method takes an optional final options bag with the same options as above.
+
+As with `encodeInto`, there is not explicit support for writing to specified offset of the target, but you can accomplish that by creating a subarray.
 
 `Uint8Array.fromHexInto` is the same except for hex.
 
