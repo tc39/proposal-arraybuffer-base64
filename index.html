@@ -10,6 +10,7 @@
 <script>
 // logic for making codeblocks copyable
 // svg from https://feathericons.com/
+'use strict';
 let copySVG = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather feather-copy"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
 
 if (navigator.clipboard) {
@@ -80,8 +81,8 @@ console<span class="token punctuation">.</span><span class="token function">log<
 </code></pre>
 
 <h3>Options</h3>
-<p>The base64 methods take an optional options bag which allows specifying the alphabet as either "base64" (the default) or "base64url" (<a href="https://datatracker.ietf.org/doc/html/rfc4648#section-5">the URL-safe variant</a>).</p>
-<p>When encoding, the options bag also allows specifying <code>strict: false</code> (the default) or <code>strict: true</code>. When using <code>strict: false</code>, whitespace is legal and padding is optional. When using <code>strict: true</code>, whitespace is forbidden and standard padding (including any overflow bits in the last character being 0) is enforced - i.e., only <a href="https://datatracker.ietf.org/doc/html/rfc4648#section-3.5">canonical</a> encodings are allowed.</p>
+<p>The base64 methods take an optional options bag which allows specifying the alphabet as either <code>"base64"</code> (the default) or <code>"base64url"</code> (<a href="https://datatracker.ietf.org/doc/html/rfc4648#section-5">the URL-safe variant</a>).</p>
+<p>The base64 decoder also allows specifying the behavior for the final chunk with <code>lastChunkHandling</code>. Recall that base64 decoding operates on chunks of 4 characters at a time, but the input maybe have some characters which don't fit evenly into such a chunk of 4 characters. This option determines how the final chunk of characters should be handled. The three options are <code>"loose"</code> (the default), which treats the chunk as if it had any necessary <code>=</code> padding (but throws if this is not possible, i.e. there is exactly one extra character); <code>"strict"</code>, which enforces that the chunk has exactly 4 characters (counting <code>=</code> padding) and that <a href="https://datatracker.ietf.org/doc/html/rfc4648#section-3.5">overflow bits</a> are 0; and <code>"stop-before-partial"</code>, which stops decoding before the final chunk unless the final chunk has exactly 4 characters.
 <p>The hex methods do not have any options.</p>
 
 <pre class="language-js"><code class="language-js"><span class="token keyword">let</span> array <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Uint8Array</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token number">251</span><span class="token punctuation">,</span> <span class="token number">255</span><span class="token punctuation">,</span> <span class="token number">191</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -94,20 +95,34 @@ console<span class="token punctuation">.</span><span class="token function">log<
 <span class="token comment">// works, despite whitespace, missing padding, and non-zero overflow bits</span>
 
 <span class="token keyword">try</span> <span class="token punctuation">{</span>
-  Uint8Array<span class="token punctuation">.</span><span class="token function">fromBase64</span><span class="token punctuation">(</span><span class="token string">'SGVsbG8g\nV29ybG Q='</span><span class="token punctuation">,</span> <span class="token punctuation">{</span> <span class="token literal-property property">strict</span><span class="token operator">:</span> <span class="token boolean">true</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Uint8Array<span class="token punctuation">.</span><span class="token function">fromBase64</span><span class="token punctuation">(</span><span class="token string">'SGVsbG8gV29ybGR='</span><span class="token punctuation">,</span> <span class="token punctuation">{</span> <span class="token literal-property property">lastChunkHandling</span><span class="token operator">:</span> <span class="token string">'strict'</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">{</span>
-  console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'with strict: true, whitespace is rejected'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'with lastChunkHandling: "strict", overflow bits are rejected'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">}</span>
 <span class="token keyword">try</span> <span class="token punctuation">{</span>
-  Uint8Array<span class="token punctuation">.</span><span class="token function">fromBase64</span><span class="token punctuation">(</span><span class="token string">'SGVsbG8gV29ybGQ'</span><span class="token punctuation">,</span> <span class="token punctuation">{</span> <span class="token literal-property property">strict</span><span class="token operator">:</span> <span class="token boolean">true</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  Uint8Array<span class="token punctuation">.</span><span class="token function">fromBase64</span><span class="token punctuation">(</span><span class="token string">'SGVsbG8gV29ybGQ'</span><span class="token punctuation">,</span> <span class="token punctuation">{</span> <span class="token literal-property property">lastChunkHandling</span><span class="token operator">:</span> <span class="token string">'strict'</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">{</span>
-  console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'with strict: true, padding is required'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+  console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'with lastChunkHandling: "strict", overflow bits are rejected'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">}</span>
-<span class="token keyword">try</span> <span class="token punctuation">{</span>
-  Uint8Array<span class="token punctuation">.</span><span class="token function">fromBase64</span><span class="token punctuation">(</span><span class="token string">'SGVsbG8gV29ybGR='</span><span class="token punctuation">,</span> <span class="token punctuation">{</span> <span class="token literal-property property">strict</span><span class="token operator">:</span> <span class="token boolean">true</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">{</span>
-  console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'with strict: true, non-zero overflow bits are rejected'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
+</code></pre>
+
+<h3>Writing to an existing Uint8Array</h3>
+<p>The <code>Uint8Array.fromBase64Into</code> method allows writing to an existing Uint8Array. Like the <a href="https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/encodeInto">TextEncoder <code>encodeInto</code> method</a>, it returns a <code>{ read, written }</code> pair.</p>
+
+<p>This method takes an optional final options bag with the same options as above.</p>
+
+<pre class="language-js"><code class="language-js"><span class="token keyword">let</span> target <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Uint8Array</span><span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">let</span> <span class="token punctuation">{</span> read<span class="token punctuation">,</span> written <span class="token punctuation">}</span> <span class="token operator">=</span> Uint8Array<span class="token punctuation">.</span><span class="token function">fromBase64Into</span><span class="token punctuation">(</span><span class="token string">'Zm9vYmFy'</span><span class="token punctuation">,</span> target<span class="token punctuation">)</span><span class="token punctuation">;</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token punctuation">{</span> target<span class="token punctuation">,</span> read<span class="token punctuation">,</span> written <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// { target: Uint8Array([102, 111, 111, 98, 97, 114, 0]), read: 8, written: 6 }</span>
+</code></pre>
+
+<p><code>Uint8Array.fromHexInto</code> is the same except for hex.</p>
+
+<pre class="language-js"><code class="language-js"><span class="token keyword">let</span> target <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Uint8Array</span><span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">let</span> <span class="token punctuation">{</span> read<span class="token punctuation">,</span> written <span class="token punctuation">}</span> <span class="token operator">=</span> Uint8Array<span class="token punctuation">.</span><span class="token function">fromHexInto</span><span class="token punctuation">(</span><span class="token string">'deadbeef'</span><span class="token punctuation">,</span> target<span class="token punctuation">)</span><span class="token punctuation">;</span>
+console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token punctuation">{</span> target<span class="token punctuation">,</span> read<span class="token punctuation">,</span> written <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token comment">// { target: Uint8Array([222, 173, 190, 239, 0, 0]), read: 8, written: 4 }</span>
 </code></pre>
 
 <h3>Streaming</h3>
