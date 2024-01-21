@@ -74,23 +74,18 @@ export function uint8ArrayToBase64(arr, options) {
   return result;
 }
 
-function decodeChunk(chunk, alphabet, throwOnExtraBits) {
+function decodeBase64Chunk(chunk, throwOnExtraBits) {
   let actualChunkLength = chunk.length;
   if (actualChunkLength < 4) {
     chunk += actualChunkLength === 2 ? 'AA' : 'A';
   }
 
-  let map = new Map((alphabet === 'base64' ? base64Characters : base64UrlCharacters).split('').map((c, i) => [c, i]));
+  let map = new Map(base64Characters.split('').map((c, i) => [c, i]));
 
   let c1 = chunk[0];
   let c2 = chunk[1];
   let c3 = chunk[2];
   let c4 = chunk[3];
-  [c1, c2, c3, c4].forEach(c => {
-    if (!map.has(c)) {
-      throw new SyntaxError(`unexpected character ${JSON.stringify(c)}`);
-    }
-  });
 
   let triplet =
     (map.get(c1) << 18) +
@@ -147,7 +142,7 @@ function fromBase64(string, alphabet, lastChunkHandling, maxLength) {
           if (chunk.length === 1) {
             throw new SyntaxError('malformed padding: exactly one additional character');
           }
-          bytes.push(...decodeChunk(chunk, alphabet, false));
+          bytes.push(...decodeBase64Chunk(chunk, false));
         } else {
           assert(lastChunkHandling === 'strict');
           throw new SyntaxError('missing padding');
@@ -178,9 +173,21 @@ function fromBase64(string, alphabet, lastChunkHandling, maxLength) {
       if (index < string.length) {
         throw new SyntaxError('unexpected character after padding');
       }
-      bytes.push(...decodeChunk(chunk, alphabet, lastChunkHandling === 'strict'));
+      bytes.push(...decodeBase64Chunk(chunk, lastChunkHandling === 'strict'));
       assert(bytes.length <= maxLength);
       return { bytes, read: string.length };
+    }
+    if (alphabet === 'base64url') {
+      if (char === '+' || char === '/') {
+        throw new SyntaxError(`unexpected character ${JSON.stringify(char)}`);
+      } else if (char === '-') {
+        char = '+';
+      } else if (char === '_') {
+        char = '/';
+      }
+    }
+    if (!base64Characters.includes(char)) {
+      throw new SyntaxError(`unexpected character ${JSON.stringify(char)}`);
     }
     let remainingBytes = maxLength - bytes.length;
     if (remainingBytes === 1 && chunk.length === 2 || remainingBytes === 2 && chunk.length === 3) {
@@ -190,7 +197,7 @@ function fromBase64(string, alphabet, lastChunkHandling, maxLength) {
 
     chunk += char;
     if (chunk.length === 4) {
-      bytes.push(...decodeChunk(chunk, alphabet, false));
+      bytes.push(...decodeBase64Chunk(chunk, false));
       chunk = '';
       read = index;
       assert(bytes.length <= maxLength);
