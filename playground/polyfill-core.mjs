@@ -41,6 +41,10 @@ export function uint8ArrayToBase64(arr, options) {
     throw new TypeError('expected alphabet to be either "base64" or "base64url"');
   }
 
+  if ('detached' in arr.buffer && arr.buffer.detached) {
+    throw new TypeError('toBase64 called on array backed by detached buffer');
+  }
+
   let lookup = alphabet === 'base64' ? base64Characters : base64UrlCharacters;
   let result = '';
 
@@ -229,6 +233,9 @@ export function base64ToUint8Array(string, options, into) {
 
 export function uint8ArrayToHex(arr) {
   checkUint8Array(arr);
+  if ('detached' in arr.buffer && arr.buffer.detached) {
+    throw new TypeError('toHex called on array backed by detached buffer');
+  }
   let out = '';
   for (let i = 0; i < arr.length; ++i) {
     out += arr[i].toString(16).padStart(2, '0');

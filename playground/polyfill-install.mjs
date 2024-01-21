@@ -1,10 +1,12 @@
 import { uint8ArrayToBase64, base64ToUint8Array, uint8ArrayToHex, hexToUint8Array, checkUint8Array } from './polyfill-core.mjs';
 
 Uint8Array.prototype.toBase64 = function (options) {
+  if (new.target !== undefined) throw new TypeError('not a constructor');
   return uint8ArrayToBase64(this, options);
 };
 
 Uint8Array.fromBase64 = function (string, options) {
+  if (new.target !== undefined) throw new TypeError('not a constructor');
   if (typeof string !== 'string') {
     throw new TypeError('expected input to be a string');
   }
@@ -12,6 +14,7 @@ Uint8Array.fromBase64 = function (string, options) {
 };
 
 Uint8Array.fromBase64Into = function (string, into, options) {
+  if (new.target !== undefined) throw new TypeError('not a constructor');
   if (typeof string !== 'string') {
     throw new TypeError('expected input to be a string');
   }
@@ -21,10 +24,12 @@ Uint8Array.fromBase64Into = function (string, into, options) {
 };
 
 Uint8Array.prototype.toHex = function () {
+  if (new.target !== undefined) throw new TypeError('not a constructor');
   return uint8ArrayToHex(this);
 };
 
 Uint8Array.fromHex = function (string) {
+  if (new.target !== undefined) throw new TypeError('not a constructor');
   if (typeof string !== 'string') {
     throw new TypeError('expected input to be a string');
   }
@@ -32,6 +37,7 @@ Uint8Array.fromHex = function (string) {
 };
 
 Uint8Array.fromHexInto = function (string, into) {
+  if (new.target !== undefined) throw new TypeError('not a constructor');
   if (typeof string !== 'string') {
     throw new TypeError('expected input to be a string');
   }
