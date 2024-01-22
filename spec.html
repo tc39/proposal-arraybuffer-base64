@@ -182,7 +182,7 @@ contributors: Kevin Gibbons
       SkipAsciiWhitespace (
         _string_: a string,
         _index_: a non-negative integer,
-      )
+      ): a non-negative integer
     </h1>
     <dl class="header">
     </dl>
@@ -190,8 +190,7 @@ contributors: Kevin Gibbons
       1. Let _length_ be the length of _string_.
       1. Repeat, while _index_ < _length_,
         1. Let _char_ be the code unit at index _index_ of _string_.
-        1. TODO: fix types - code unit vs point.
-        1. If _char_ is neither U+0009 (TAB), U+000A (LF), U+000C (FF), U+000D (CR), nor U+0020 (SPACE), then
+        1. If _char_ is neither 0x0009 (TAB), 0x000A (LF), 0x000C (FF), 0x000D (CR), nor 0x0020 (SPACE), then
           1. Return _index_.
         1. Set _index_ to _index_ + 1.
       1. Return _index_.
