@@ -202,7 +202,6 @@ contributors: Kevin Gibbons
     <h1>
       DecodeBase64Chunk (
         _chunk_: a string,
-        _alphabet_: *"base64"* or *"base64url"*,
         optional _throwOnExtraBits_: a boolean,
       ): either a normal completion containing a List of byte values, or a throw completion
     </h1>
@@ -217,12 +216,6 @@ contributors: Kevin Gibbons
         1. Set _chunk_ to the string-concatenation of _chunk_ and *"A"*.
       1. Else,
         1. Assert: _chunkLength_ is 4.
-      1. If _alphabet_ is *"base64url"*, then
-        1. TODO fix the types here - these are code points, not code units.
-        1. If _chunk_ contains U+002B (PLUS SIGN) or U+002F (SOLIDUS), throw a *SyntaxError* exception.
-        1. Replace all occurrences of U+002D (HYPHEN-MINUS) in _chunk_ with U+002B (PLUS SIGN).
-        1. Replace all occurrences of U+005F (LOW LINE) in _chunk_ with U+002F (SOLIDUS).
-      1. If any element of _chunk_ is not an element of the standard base64 alphabet, throw a *SyntaxError* exception.
       1. Let _byteSequence_ be the unique sequence of 3 bytes resulting from decoding _chunk_ as base64 (such that applying the base64 encoding specified in section 4 of <a href="https://datatracker.ietf.org/doc/html/rfc4648">RFC 4648</a> to _byteSequence_ would produce _chunk_).
       1. Let _bytes_ be a List whose elements are the elements of _byteSequence_, in order.
       1. If _chunkLength_ is 2, then
@@ -273,7 +266,7 @@ contributors: Kevin Gibbons
             1. Else if _lastChunkHandling_ is *"loose"*, then
               1. If _chunkLength_ is 1, then
                 1. Throw a *SyntaxError* exception.
-              1. Set _bytes_ to the list-concatenation of _bytes_ and ? DecodeBase64Chunk(_chunk_, _alphabet_, *false*).
+              1. Set _bytes_ to the list-concatenation of _bytes_ and ! DecodeBase64Chunk(_chunk_, *false*).
             1. Else,
               1. Assert: _lastChunkHandling_ is *"strict"*.
               1. Throw a *SyntaxError* exception.
@@ -296,15 +289,20 @@ contributors: Kevin Gibbons
             1. Throw a *SyntaxError* exception.
           1. If _lastChunkHandling_ is *"strict"*, let _throwOnExtraBits_ be *true*.
           1. Else, let _throwOnExtraBits_ be *false*.
-          1. Set _bytes_ to the list-concatenation of _bytes_ and ? DecodeBase64Chunk(_chunk_, _alphabet_, _throwOnExtraBits_).
+          1. Set _bytes_ to the list-concatenation of _bytes_ and ? DecodeBase64Chunk(_chunk_, _throwOnExtraBits_).
           1. Return the Record { [[Read]]: _length_, [[Bytes]]: _bytes_ }.
+        1. If _alphabet_ is *"base64url"*, then
+          1. If _char_ is either *"+"* or *"/"*, throw a *SyntaxError* exception.
+          1. Else if _char_ is *"-"*, set _char_ to *"+"*.
+          1. Else if _char_ is *"_"*, set _char_ to *"/"*.
+        1. If _char_ is not an element of the standard base64 alphabet, throw a *SyntaxError* exception.
         1. Let _remaining_ be _maxLength_ - the length of _bytes_.
         1. If _remaining_ = 1 and _chunkLength_ = 2, or if _remaining_ = 2 and _chunkLength_ = 3, then
           1. Return the Record { [[Read]]: _read_, [[Bytes]]: _bytes_ }.
         1. Set _chunk_ to the string-concatenation of _chunk_ and _char_.
         1. Set _chunkLength_ to the length of _chunk_.
         1. If _chunkLength_ = 4, then
-          1. Set _bytes_ to the list-concatenation of _bytes_ and ? DecodeBase64Chunk(_chunk_, _alphabet_).
+          1. Set _bytes_ to the list-concatenation of _bytes_ and ! DecodeBase64Chunk(_chunk_).
           1. Set _chunk_ to the empty String.
           1. Set _chunkLength_ to 0.
           1. Set _read_ to _index_.
