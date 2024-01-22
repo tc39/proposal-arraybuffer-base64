@@ -42,8 +42,8 @@ contributors: Kevin Gibbons
     1. Let _toEncode_ be ? GetUint8ArrayBytes(_O_).
     1. Let _out_ be the empty String.
     1. For each byte _byte_ of _toEncode_, do
-      1. Let _hex_ be Number::toString(_byte_, 16).
-      1. Set _hex_ to StringPad(_hex_, 2, "0", ~start~).
+      1. Let _hex_ be Number::toString(𝔽(_byte_), 16).
+      1. Set _hex_ to StringPad(_hex_, 2, *"0"*, ~start~).
       1. Set _out_ to the string-concatenation of _out_ and _hex_.
     1. Return _out_.
   </emu-alg>
@@ -63,8 +63,8 @@ contributors: Kevin Gibbons
     1. If _lastChunkHandling_ is not one of *"loose"*, *"strict"*, or *"stop-before-partial"*, throw a *TypeError* exception.
     1. Let _result_ be ? FromBase64(_string_, _alphabet_, _lastChunkHandling_).
     1. Let _resultLength_ be the length of _result_.[[Bytes]].
-    1. Let _ta_ be ? <emu-meta suppress-effects="user-code">AllocateTypedArray(*"Uint8Array"*, %Uint8Array%, %Uint8Array.prototype%, _resultLength_)</emu-meta>.
-    1. Set the value at each index of _ta_.[[ViewedArrayBuffer]].[[ArrayBufferData]] to the value at the corresponding index of _ta_.[[Bytes]].
+    1. Let _ta_ be ? <emu-meta suppress-effects="user-code">AllocateTypedArray(*"Uint8Array"*, %Uint8Array%, *"%Uint8Array.prototype%"*, _resultLength_)</emu-meta>.
+    1. Set the value at each index of _ta_.[[ViewedArrayBuffer]].[[ArrayBufferData]] to the value at the corresponding index of _result_.[[Bytes]].
     1. Return _ta_.
   </emu-alg>
 </emu-clause>
@@ -73,8 +73,7 @@ contributors: Kevin Gibbons
   <h1>Uint8Array.fromBase64Into ( _string_, _into_ [ , _options_ ] )</h1>
   <emu-alg>
     1. If _string_ is not a String, throw a *TypeError* exception.
-    1. Perform ? RequireInternalSlot(_into_, [[TypedArrayName]]).
-    1. If _into_.[[TypedArrayName]] is not *"Uint8Array"*, throw a *TypeError* exception.
+    1. Perform ? ValidateUint8Array(_into_).
     1. Let _opts_ be ? GetOptionsObject(_options_).
     1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
@@ -98,8 +97,8 @@ contributors: Kevin Gibbons
       1. Let _byteIndexInBuffer_ be _index_ + _offset_.
       1. Perform SetValueInBuffer(_into_.[[ViewedArrayBuffer]], _byteIndexInBuffer_, ~uint8~, 𝔽(_byte_), *true*, ~unordered~).
     1. Let _resultObject_ be OrdinaryObjectCreate(%Object.prototype%).
-    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"read"*, _result_.[[Read]]).
-    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"written"*, _written_).
+    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"read"*, 𝔽(_result_.[[Read]])).
+    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"written"*, 𝔽(_written_)).
     1. Return _resultObject_.
   </emu-alg>
 </emu-clause>
@@ -110,8 +109,8 @@ contributors: Kevin Gibbons
     1. If _string_ is not a String, throw a *TypeError* exception.
     1. Let _result_ be ? FromHex(_string_).
     1. Let _resultLength_ be the length of _result_.[[Bytes]].
-    1. Let _ta_ be ? <emu-meta suppress-effects="user-code">AllocateTypedArray(*"Uint8Array"*, %Uint8Array%, %Uint8Array.prototype%, _resultLength_)</emu-meta>.
-    1. Set the value at each index of _ta_.[[ViewedArrayBuffer]].[[ArrayBufferData]] to the value at the corresponding index of _ta_.[[Bytes]].
+    1. Let _ta_ be ? <emu-meta suppress-effects="user-code">AllocateTypedArray(*"Uint8Array"*, %Uint8Array%, *"%Uint8Array.prototype%"*, _resultLength_)</emu-meta>.
+    1. Set the value at each index of _ta_.[[ViewedArrayBuffer]].[[ArrayBufferData]] to the value at the corresponding index of _result_.[[Bytes]].
     1. Return _ta_.
   </emu-alg>
 </emu-clause>
@@ -120,8 +119,7 @@ contributors: Kevin Gibbons
   <h1>Uint8Array.fromHexInto ( _string_, _into_ )</h1>
   <emu-alg>
     1. If _string_ is not a String, throw a *TypeError* exception.
-    1. Perform ? RequireInternalSlot(_into_, [[TypedArrayName]]).
-    1. If _into_.[[TypedArrayName]] is not *"Uint8Array"*, throw a *TypeError* exception.
+    1. Perform ? ValidateUint8Array(_into_).
     1. Let _taRecord_ be MakeTypedArrayWithBufferWitnessRecord(_into_, ~seq-cst~).
     1. Let _byteLength_ be TypedArrayByteLength(_taRecord_).
     1. Let _maxLength_ be _byteLength_.
@@ -137,8 +135,8 @@ contributors: Kevin Gibbons
       1. Let _byteIndexInBuffer_ be _index_ + _offset_.
       1. Perform SetValueInBuffer(_into_.[[ViewedArrayBuffer]], _byteIndexInBuffer_, ~uint8~, 𝔽(_byte_), *true*, ~unordered~).
     1. Let _resultObject_ be OrdinaryObjectCreate(%Object.prototype%).
-    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"read"*, _result_.[[Read]]).
-    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"written"*, _written_).
+    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"read"*, 𝔽(_result_.[[Read]])).
+    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"written"*, 𝔽(_written_)).
     1. Return _resultObject_.
   </emu-alg>
 </emu-clause>
