@@ -129,7 +129,7 @@ function skipAsciiWhitespace(string, index) {
 
 function fromBase64(string, alphabet, lastChunkHandling, maxLength) {
   if (maxLength === 0) {
-    return { read, bytes };
+    return { read: 0, bytes: [] };
   }
 
   let read = 0;
@@ -223,7 +223,7 @@ export function base64ToUint8Array(string, options, into) {
   let { bytes, read } = fromBase64(string, alphabet, lastChunkHandling, maxLength);
 
   bytes = new Uint8Array(bytes);
-  if (into) {
+  if (into && bytes.length > 0) {
     assert(bytes.length <= into.length);
     into.set(bytes);
   }
@@ -271,7 +271,7 @@ export function hexToUint8Array(string, into) {
   }
 
   bytes = new Uint8Array(bytes);
-  if (into) {
+  if (into && bytes.length > 0) {
     assert(bytes.length <= into.length);
     into.set(bytes);
   }
