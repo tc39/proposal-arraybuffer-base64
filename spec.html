@@ -73,8 +73,7 @@ contributors: Kevin Gibbons
   <h1>Uint8Array.fromBase64Into ( _string_, _into_ [ , _options_ ] )</h1>
   <emu-alg>
     1. If _string_ is not a String, throw a *TypeError* exception.
-    1. Perform ? RequireInternalSlot(_into_, [[TypedArrayName]]).
-    1. If _into_.[[TypedArrayName]] is not *"Uint8Array"*, throw a *TypeError* exception.
+    1. Perform ? ValidateUint8Array(_into_).
     1. Let _opts_ be ? GetOptionsObject(_options_).
     1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
@@ -120,8 +119,7 @@ contributors: Kevin Gibbons
   <h1>Uint8Array.fromHexInto ( _string_, _into_ )</h1>
   <emu-alg>
     1. If _string_ is not a String, throw a *TypeError* exception.
-    1. Perform ? RequireInternalSlot(_into_, [[TypedArrayName]]).
-    1. If _into_.[[TypedArrayName]] is not *"Uint8Array"*, throw a *TypeError* exception.
+    1. Perform ? ValidateUint8Array(_into_).
     1. Let _taRecord_ be MakeTypedArrayWithBufferWitnessRecord(_into_, ~seq-cst~).
     1. Let _byteLength_ be TypedArrayByteLength(_taRecord_).
     1. Let _maxLength_ be _byteLength_.
