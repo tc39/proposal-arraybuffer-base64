@@ -42,7 +42,7 @@ contributors: Kevin Gibbons
     1. Let _toEncode_ be ? GetUint8ArrayBytes(_O_).
     1. Let _out_ be the empty String.
     1. For each byte _byte_ of _toEncode_, do
-      1. Let _hex_ be Number::toString(_byte_, 16).
+      1. Let _hex_ be Number::toString(𝔽(_byte_), 16).
       1. Set _hex_ to StringPad(_hex_, 2, *"0"*, ~start~).
       1. Set _out_ to the string-concatenation of _out_ and _hex_.
     1. Return _out_.
@@ -97,8 +97,8 @@ contributors: Kevin Gibbons
       1. Let _byteIndexInBuffer_ be _index_ + _offset_.
       1. Perform SetValueInBuffer(_into_.[[ViewedArrayBuffer]], _byteIndexInBuffer_, ~uint8~, 𝔽(_byte_), *true*, ~unordered~).
     1. Let _resultObject_ be OrdinaryObjectCreate(%Object.prototype%).
-    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"read"*, _result_.[[Read]]).
-    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"written"*, _written_).
+    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"read"*, 𝔽(_result_.[[Read]])).
+    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"written"*, 𝔽(_written_)).
     1. Return _resultObject_.
   </emu-alg>
 </emu-clause>
@@ -135,8 +135,8 @@ contributors: Kevin Gibbons
       1. Let _byteIndexInBuffer_ be _index_ + _offset_.
       1. Perform SetValueInBuffer(_into_.[[ViewedArrayBuffer]], _byteIndexInBuffer_, ~uint8~, 𝔽(_byte_), *true*, ~unordered~).
     1. Let _resultObject_ be OrdinaryObjectCreate(%Object.prototype%).
-    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"read"*, _result_.[[Read]]).
-    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"written"*, _written_).
+    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"read"*, 𝔽(_result_.[[Read]])).
+    1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"written"*, 𝔽(_written_)).
     1. Return _resultObject_.
   </emu-alg>
 </emu-clause>
