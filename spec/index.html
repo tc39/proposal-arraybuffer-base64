@@ -63,8 +63,8 @@
 
   <emu-clause id="sec-skipasciiwhitespace" type="abstract operation" aoid="SkipAsciiWhitespace">
     <h1><span class="secnum">9.1</span> SkipAsciiWhitespace ( <var>string</var>, <var>index</var> )</h1>
-    <p>The abstract operation SkipAsciiWhitespace takes arguments <var>string</var> (a string) and <var>index</var> (a non-negative <emu-xref href="#integer"><a href="https://tc39.es/ecma262/#integer">integer</a></emu-xref>). It performs the following steps when called:</p>
-    <emu-alg><ol><li>Let <var>length</var> be the length of <var>string</var>.</li><li>Repeat, while <var>index</var> &lt; <var>length</var>,<ol><li>Let <var>char</var> be the code unit at index <var>index</var> of <var>string</var>.</li><li>TODO: fix types - code unit vs point.</li><li>If <var>char</var> is neither U+0009 (TAB), U+000A (LF), U+000C (FF), U+000D (CR), nor U+0020 (SPACE), then<ol><li>Return <var>index</var>.</li></ol></li><li>Set <var>index</var> to <var>index</var> + 1.</li></ol></li><li>Return <var>index</var>.</li></ol></emu-alg>
+    <p>The abstract operation SkipAsciiWhitespace takes arguments <var>string</var> (a string) and <var>index</var> (a non-negative <emu-xref href="#integer"><a href="https://tc39.es/ecma262/#integer">integer</a></emu-xref>) and returns a non-negative <emu-xref href="#integer"><a href="https://tc39.es/ecma262/#integer">integer</a></emu-xref>. It performs the following steps when called:</p>
+    <emu-alg><ol><li>Let <var>length</var> be the length of <var>string</var>.</li><li>Repeat, while <var>index</var> &lt; <var>length</var>,<ol><li>Let <var>char</var> be the code unit at index <var>index</var> of <var>string</var>.</li><li>If <var>char</var> is neither 0x0009 (TAB), 0x000A (LF), 0x000C (FF), 0x000D (CR), nor 0x0020 (SPACE), then<ol><li>Return <var>index</var>.</li></ol></li><li>Set <var>index</var> to <var>index</var> + 1.</li></ol></li><li>Return <var>index</var>.</li></ol></emu-alg>
   </emu-clause>
 
   <emu-clause id="sec-decodebase64chunk" type="abstract operation" aoid="DecodeBase64Chunk">
