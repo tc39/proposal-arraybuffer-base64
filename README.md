@@ -6,7 +6,7 @@ It is currently at Stage 2 of [the TC39 process](https://tc39.es/process-documen
 
 Try it out on [the playground](https://tc39.github.io/proposal-arraybuffer-base64/).
 
-Spec text is available [here](https://tc39.github.io/proposal-arraybuffer-base64/spec/).
+Spec text is available [here](https://tc39.github.io/proposal-arraybuffer-base64/spec/), and test262 tests in [this PR](https://github.com/tc39/test262/pull/3994).
 
 ## Basic API
 
