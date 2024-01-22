@@ -131,14 +131,14 @@ test('writing to an existing buffer', async t => {
 
   await t.test('buffer exact, padded, stop-before-partial', () => {
     let output = new Uint8Array(5);
-    let { read, written } = Uint8Array.fromBase64Into(foobaInput + '=', output , { lastChunkHandling: 'stop-before-partial' });
+    let { read, written } = Uint8Array.fromBase64Into(foobaInput + '=', output, { lastChunkHandling: 'stop-before-partial' });
     assert.deepStrictEqual([...output], foobarOutput.slice(0, 5));
     assert.deepStrictEqual({ read, written }, { read: 8, written: 5 });
   });
 
   await t.test('buffer exact, not padded, stop-before-partial', () => {
     let output = new Uint8Array(5);
-    let { read, written } = Uint8Array.fromBase64Into(foobaInput, output , { lastChunkHandling: 'stop-before-partial' });
+    let { read, written } = Uint8Array.fromBase64Into(foobaInput, output, { lastChunkHandling: 'stop-before-partial' });
     assert.deepStrictEqual([...output], [...foobarOutput.slice(0, 3), 0, 0]);
     assert.deepStrictEqual({ read, written }, { read: 4, written: 3 });
   });
