@@ -164,11 +164,18 @@ contributors: Kevin Gibbons
   <dl class="header"></dl>
   <emu-alg>
     1. Let _buffer_ be _ta_.[[ViewedArrayBuffer]].
-    1. If IsDetachedBuffer(_buffer_) is *true*, throw a *TypeError* exception.
-    1. Let _block_ be _buffer_.[[ArrayBufferData]].
-    1. Let _offset_ be _ta_.[[ByteOffset]].
-    1. Let _length_ be _ta_.[[ArrayLength]].
-    1. Return a List whose elements are the byte values in _block_ starting at _offset_ and continuing for a total of _length_ bytes, in order.
+    1. Let _taRecord_ be MakeTypedArrayWithBufferWitnessRecord(_ta_, ~seq-cst~).
+    1. If IsTypedArrayOutOfBounds(_taRecord_) is *true*, throw a *TypeError* exception.
+    1. Let _len_ be TypedArrayLength(_taRecord_).
+    1. Let _byteOffset_ be _ta_.[[ByteOffset]].
+    1. Let _bytes_ be a new empty List.
+    1. Let _index_ be 0.
+    1. Repeat, while _index_ < _len_,
+      1. Let _byteIndex_ be _byteOffset_ + _index_.
+      1. Let _byte_ be ℝ(GetValueFromBuffer(_buffer_, _byteIndex_, ~uint8~, *true*, ~unordered~)).
+      1. Append _byte_ to _bytes_.
+      1. Set _index_ to _index_ + 1.
+    1. Return _bytes_.
   </emu-alg>
 </emu-clause>
 
