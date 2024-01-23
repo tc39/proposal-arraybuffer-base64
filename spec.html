@@ -174,7 +174,7 @@ contributors: Kevin Gibbons
     1. Let _index_ be 0.
     1. Repeat, while _index_ < _len_,
       1. Let _byteIndex_ be _byteOffset_ + _index_.
-      1. Let _byte_ be GetValueFromBuffer(_buffer_, _byteIndex_, ~uint8~, *true*, ~unordered~).
+      1. Let _byte_ be ℝ(GetValueFromBuffer(_buffer_, _byteIndex_, ~uint8~, *true*, ~unordered~)).
       1. Append _byte_ to _bytes_.
       1. Set _index_ to _index_ + 1.
     1. Return _bytes_.
