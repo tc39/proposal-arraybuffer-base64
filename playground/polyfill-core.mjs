@@ -260,9 +260,6 @@ export function hexToUint8Array(string, into) {
   if (string.length % 2 !== 0) {
     throw new SyntaxError('string should be an even number of characters');
   }
-  if (/[^0-9a-fA-F]/.test(string)) {
-    throw new SyntaxError('string should only contain hex characters');
-  }
   if (into && 'detached' in into.buffer && into.buffer.detached) {
     throw new TypeError('fromHexInto called on array backed by detached buffer');
   }
@@ -275,7 +272,11 @@ export function hexToUint8Array(string, into) {
   let index = 0;
   if (maxLength > 0) {
     while (index < string.length) {
-      bytes.push(parseInt(string.slice(index, index + 2), 16));
+      let hexits = string.slice(index, index + 2);
+      if (/[^0-9a-fA-F]/.test(hexits)) {
+        throw new SyntaxError('string should only contain hex characters');
+      }
+      bytes.push(parseInt(hexits, 16));
       index += 2;
       if (bytes.length === maxLength) {
         break;
