@@ -330,11 +330,11 @@ contributors: Kevin Gibbons
       1. If _maxLength_ is not present, let _maxLength_ be 2<sup>53</sup> - 1.
       1. Let _length_ be the length of _string_.
       1. If _length_ modulo 2 is not 0, throw a *SyntaxError* exception.
-      1. If _string_ contains any code units which are not in *"0123456789abcdefABCDEF"*, throw a *SyntaxError* exception.
       1. Let _bytes_ be « ».
       1. Let _index_ be 0.
       1. Repeat, while _index_ &lt; _length_,
         1. Let _hexits_ be the substring of _string_ from _index_ to _index_ + 2.
+        1. If _hexits_ contains any code units which are not in *"0123456789abcdefABCDEF"*, throw a *SyntaxError* exception.
         1. Set _index_ to _index_ + 2.
         1. Let _byte_ be the integer value represented by _hexits_ in base-16 notation, using the letters A-F and a-f for digits with values 10 through 15.
         1. Append _byte_ to _bytes_.
