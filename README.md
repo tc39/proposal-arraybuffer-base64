@@ -42,11 +42,11 @@ The hex methods do not take any options.
 
 ## Writing to an existing Uint8Array
 
-The `Uint8Array.fromBase64Into` method allows writing to an existing Uint8Array. Like the [TextEncoder `encodeInto` method](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/encodeInto), it returns a `{ read, written }` pair.
+The `Uint8Array.prototype.setFromBase64` method allows writing to an existing Uint8Array. Like the [TextEncoder `encodeInto` method](https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/encodeInto), it returns a `{ read, written }` pair.
 
 ```js
 let target = new Uint8Array(8);
-let { read, written } = Uint8Array.fromBase64Into('Zm9vYmFy', target);
+let { read, written } = target.setFromBase64('Zm9vYmFy');
 assert.deepStrictEqual([...target], [102, 111, 111, 98, 97, 114, 0, 0]);
 assert.deepStrictEqual({ read, written }, { read: 8, written: 6 });
 ```
@@ -55,7 +55,7 @@ This method takes an optional final options bag with the same options as above.
 
 As with `encodeInto`, there is not explicit support for writing to specified offset of the target, but you can accomplish that by creating a subarray.
 
-`Uint8Array.fromHexInto` is the same except for hex.
+`Uint8Array.prototype.setFromHex` is the same except for hex.
 
 ## Streaming
 

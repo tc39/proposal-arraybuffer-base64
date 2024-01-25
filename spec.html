@@ -69,11 +69,12 @@ contributors: Kevin Gibbons
   </emu-alg>
 </emu-clause>
 
-<emu-clause id="sec-uint8array.frombase64into">
-  <h1>Uint8Array.fromBase64Into ( _string_, _into_ [ , _options_ ] )</h1>
+<emu-clause id="sec-uint8array.prototype.setfrombase64">
+  <h1>Uint8Array.prototype.setFromBase64 ( _string_ [ , _options_ ] )</h1>
   <emu-alg>
-    1. If _string_ is not a String, throw a *TypeError* exception.
+    1. Let _into_ be the *this* value.
     1. Perform ? ValidateUint8Array(_into_).
+    1. If _string_ is not a String, throw a *TypeError* exception.
     1. Let _opts_ be ? GetOptionsObject(_options_).
     1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
@@ -116,11 +117,12 @@ contributors: Kevin Gibbons
   </emu-alg>
 </emu-clause>
 
-<emu-clause id="sec-uint8array.fromhexinto">
-  <h1>Uint8Array.fromHexInto ( _string_, _into_ )</h1>
+<emu-clause id="sec-uint8array.prototype.setfromhex">
+  <h1>Uint8Array.prototype.setFromHex ( _string_ )</h1>
   <emu-alg>
-    1. If _string_ is not a String, throw a *TypeError* exception.
+    1. Let _into_ be the *this* value.
     1. Perform ? ValidateUint8Array(_into_).
+    1. If _string_ is not a String, throw a *TypeError* exception.
     1. Let _taRecord_ be MakeTypedArrayWithBufferWitnessRecord(_into_, ~seq-cst~).
     1. If IsTypedArrayOutOfBounds(_taRecord_) is *true*, throw a *TypeError* exception.
     1. Let _byteLength_ be TypedArrayByteLength(_taRecord_).
