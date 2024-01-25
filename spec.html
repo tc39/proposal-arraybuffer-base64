@@ -83,6 +83,7 @@ contributors: Kevin Gibbons
     1. If _lastChunkHandling_ is *undefined*, set _lastChunkHandling_ to *"loose"*.
     1. If _lastChunkHandling_ is not one of *"loose"*, *"strict"*, or *"stop-before-partial"*, throw a *TypeError* exception.
     1. Let _taRecord_ be MakeTypedArrayWithBufferWitnessRecord(_into_, ~seq-cst~).
+    1. If IsTypedArrayOutOfBounds(_taRecord_) is *true*, throw a *TypeError* exception.
     1. Let _byteLength_ be TypedArrayByteLength(_taRecord_).
     1. Let _maxLength_ be _byteLength_.
     1. Let _result_ be ? FromBase64(_string_, _alphabet_, _lastChunkHandling_, _maxLength_).
@@ -121,6 +122,7 @@ contributors: Kevin Gibbons
     1. If _string_ is not a String, throw a *TypeError* exception.
     1. Perform ? ValidateUint8Array(_into_).
     1. Let _taRecord_ be MakeTypedArrayWithBufferWitnessRecord(_into_, ~seq-cst~).
+    1. If IsTypedArrayOutOfBounds(_taRecord_) is *true*, throw a *TypeError* exception.
     1. Let _byteLength_ be TypedArrayByteLength(_taRecord_).
     1. Let _maxLength_ be _byteLength_.
     1. Let _result_ be ? FromHex(_string_, _maxLength_).

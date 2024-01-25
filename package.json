@@ -10,7 +10,7 @@
     "test": "node --test"
   },
   "dependencies": {
-    "@tc39/ecma262-biblio": "^2.1.2663",
+    "@tc39/ecma262-biblio": "2.1.2672",
     "ecmarkup": "^18.0.0",
     "jsdom": "^21.1.1",
     "prismjs": "^1.29.0"
