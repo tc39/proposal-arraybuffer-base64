@@ -224,6 +224,9 @@ export function base64ToUint8Array(string, options, into) {
   if (!['loose', 'strict', 'stop-before-partial'].includes(lastChunkHandling)) {
     throw new TypeError('expected lastChunkHandling to be either "loose", "strict", or "stop-before-partial"');
   }
+  if (into && 'detached' in into.buffer && into.buffer.detached) {
+    throw new TypeError('toBase64Into called on array backed by detached buffer');
+  }
 
   let maxLength = into ? into.length : 2 ** 53 - 1;
 
@@ -259,6 +262,9 @@ export function hexToUint8Array(string, into) {
   }
   if (/[^0-9a-fA-F]/.test(string)) {
     throw new SyntaxError('string should only contain hex characters');
+  }
+  if (into && 'detached' in into.buffer && into.buffer.detached) {
+    throw new TypeError('fromHexInto called on array backed by detached buffer');
   }
 
   let maxLength = into ? into.length : 2 ** 53 - 1;
