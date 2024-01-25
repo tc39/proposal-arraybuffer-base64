@@ -257,11 +257,11 @@ export function hexToUint8Array(string, into) {
   if (typeof string !== 'string') {
     throw new TypeError('expected string to be a string');
   }
-  if (string.length % 2 !== 0) {
-    throw new SyntaxError('string should be an even number of characters');
-  }
   if (into && 'detached' in into.buffer && into.buffer.detached) {
     throw new TypeError('fromHexInto called on array backed by detached buffer');
+  }
+  if (string.length % 2 !== 0) {
+    throw new SyntaxError('string should be an even number of characters');
   }
 
   let maxLength = into ? into.length : 2 ** 53 - 1;
