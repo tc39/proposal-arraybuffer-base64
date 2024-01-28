@@ -97,7 +97,7 @@ contributors: Kevin Gibbons
       1. Let _byte_ be _bytes_[_index_].
       1. Let _byteIndexInBuffer_ be _index_ + _offset_.
       1. Perform SetValueInBuffer(_into_.[[ViewedArrayBuffer]], _byteIndexInBuffer_, ~uint8~, 𝔽(_byte_), *true*, ~unordered~).
-      1. Set _index_ to _index_ + 2.
+      1. Set _index_ to _index_ + 1.
     1. Let _resultObject_ be OrdinaryObjectCreate(%Object.prototype%).
     1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"read"*, 𝔽(_result_.[[Read]])).
     1. Perform ! CreateDataPropertyOrThrow(_resultObject_, *"written"*, 𝔽(_written_)).
