@@ -107,20 +107,20 @@ console<span class="token punctuation">.</span><span class="token function">log<
 </code></pre>
 
 <h3>Writing to an existing Uint8Array</h3>
-<p>The <code>Uint8Array.fromBase64Into</code> method allows writing to an existing Uint8Array. Like the <a href="https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/encodeInto">TextEncoder <code>encodeInto</code> method</a>, it returns a <code>{ read, written }</code> pair.</p>
+<p>The <code>Uint8Array.prototype.setFromBase64</code> method allows writing to an existing Uint8Array. Like the <a href="https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/encodeInto">TextEncoder <code>encodeInto</code> method</a>, it returns a <code>{ read, written }</code> pair.</p>
 
 <p>This method takes an optional final options bag with the same options as above.</p>
 
 <pre class="language-js"><code class="language-js"><span class="token keyword">let</span> target <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Uint8Array</span><span class="token punctuation">(</span><span class="token number">7</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">let</span> <span class="token punctuation">{</span> read<span class="token punctuation">,</span> written <span class="token punctuation">}</span> <span class="token operator">=</span> Uint8Array<span class="token punctuation">.</span><span class="token function">fromBase64Into</span><span class="token punctuation">(</span><span class="token string">'Zm9vYmFy'</span><span class="token punctuation">,</span> target<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">let</span> <span class="token punctuation">{</span> read<span class="token punctuation">,</span> written <span class="token punctuation">}</span> <span class="token operator">=</span> target<span class="token punctuation">.</span><span class="token function">setFromBase64</span><span class="token punctuation">(</span><span class="token string">'Zm9vYmFy'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token punctuation">{</span> target<span class="token punctuation">,</span> read<span class="token punctuation">,</span> written <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token comment">// { target: Uint8Array([102, 111, 111, 98, 97, 114, 0]), read: 8, written: 6 }</span>
 </code></pre>
 
-<p><code>Uint8Array.fromHexInto</code> is the same except for hex.</p>
+<p><code>Uint8Array.prototype.setFromHex</code> is the same except for hex.</p>
 
 <pre class="language-js"><code class="language-js"><span class="token keyword">let</span> target <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Uint8Array</span><span class="token punctuation">(</span><span class="token number">6</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token keyword">let</span> <span class="token punctuation">{</span> read<span class="token punctuation">,</span> written <span class="token punctuation">}</span> <span class="token operator">=</span> Uint8Array<span class="token punctuation">.</span><span class="token function">fromHexInto</span><span class="token punctuation">(</span><span class="token string">'deadbeef'</span><span class="token punctuation">,</span> target<span class="token punctuation">)</span><span class="token punctuation">;</span>
+<span class="token keyword">let</span> <span class="token punctuation">{</span> read<span class="token punctuation">,</span> written <span class="token punctuation">}</span> <span class="token operator">=</span> target<span class="token punctuation">.</span><span class="token function">setFromHex</span><span class="token punctuation">(</span><span class="token string">'deadbeef'</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token punctuation">{</span> target<span class="token punctuation">,</span> read<span class="token punctuation">,</span> written <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token comment">// { target: Uint8Array([222, 173, 190, 239, 0, 0]), read: 8, written: 4 }</span>
 </code></pre>
