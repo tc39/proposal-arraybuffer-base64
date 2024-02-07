@@ -112,22 +112,22 @@ try {
 </code></pre>
 
 <h3>Writing to an existing Uint8Array</h3>
-<p>The <code>Uint8Array.fromBase64Into</code> method allows writing to an existing Uint8Array. Like the <a href="https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/encodeInto">TextEncoder <code>encodeInto</code> method</a>, it returns a <code>{ read, written }</code> pair.</p>
+<p>The <code>Uint8Array.prototype.setFromBase64</code> method allows writing to an existing Uint8Array. Like the <a href="https://developer.mozilla.org/en-US/docs/Web/API/TextEncoder/encodeInto">TextEncoder <code>encodeInto</code> method</a>, it returns a <code>{ read, written }</code> pair.</p>
 
 <p>This method takes an optional final options bag with the same options as above.</p>
 
 <pre class="language-js"><code class="language-js">
 let target = new Uint8Array(7);
-let { read, written } = Uint8Array.fromBase64Into('Zm9vYmFy', target);
+let { read, written } = target.setFromBase64('Zm9vYmFy');
 console.log({ target, read, written });
 // { target: Uint8Array([102, 111, 111, 98, 97, 114, 0]), read: 8, written: 6 }
 </code></pre>
 
-<p><code>Uint8Array.fromHexInto</code> is the same except for hex.</p>
+<p><code>Uint8Array.prototype.setFromHex</code> is the same except for hex.</p>
 
 <pre class="language-js"><code class="language-js">
 let target = new Uint8Array(6);
-let { read, written } = Uint8Array.fromHexInto('deadbeef', target);
+let { read, written } = target.setFromHex('deadbeef');
 console.log({ target, read, written });
 // { target: Uint8Array([222, 173, 190, 239, 0, 0]), read: 8, written: 4 }
 </code></pre>

@@ -18,7 +18,7 @@ class Base64Decoder {
     // but may be too much if there is whitespace
     // if you're really concerned about memory, a TextDecoder style API is a bad choice
     let buffer = new Uint8Array(Math.ceil(chunk.length * 3 / 4));
-    let { read, written } = Uint8Array.fromBase64Into(chunk, buffer, opts);
+    let { read, written } = buffer.setFromBase64(chunk, opts);
     buffer = buffer.subarray(0, written);
     this.#extra = chunk.slice(read);
     return buffer;
