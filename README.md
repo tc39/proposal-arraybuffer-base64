@@ -2,7 +2,7 @@
 
 base64 is a common way to represent arbitrary binary data as ASCII. JavaScript has Uint8Arrays to work with binary data, but no built-in mechanism to encode that data as base64, nor to take base64'd data and produce a corresponding Uint8Arrays. This is a proposal to fix that. It also adds methods for converting between hex strings and Uint8Arrays.
 
-It is currently at Stage 2 of [the TC39 process](https://tc39.es/process-document/).
+It is currently at stage 3 of [the TC39 process](https://tc39.es/process-document/): it is ready for implementations. See [this issue](https://github.com/tc39/proposal-arraybuffer-base64/issues/51) for current status.
 
 Try it out on [the playground](https://tc39.github.io/proposal-arraybuffer-base64/).
 
@@ -36,7 +36,7 @@ Additional options are supplied in an options bag argument:
 
 - `alphabet`: Allows specifying the alphabet as either `base64` or `base64url`.
 
-- `lastChunkHandling`: Recall that base64 decoding operates on chunks of 4 characters at a time, but the input maybe have some characters which don't fit evenly into such a chunk of 4 characters. This option determines how the final chunk of characters should be handled. The three options are `"loose"` (the default), which treats the chunk as if it had any necessary `=` padding (but throws if this is not possible, i.e. there is exactly one extra character); `"strict"`, which enforces that the chunk has exactly 4 characters (counting `=` padding) and that [overflow bits](https://datatracker.ietf.org/doc/html/rfc4648#section-3.5) are 0; and `"stop-before-partial"`, which stops decoding before the final chunk unless the final chunk has exactly 4 characters.
+- `lastChunkHandling`: Recall that base64 decoding operates on chunks of 4 characters at a time, but the input may have some characters which don't fit evenly into such a chunk of 4 characters. This option determines how the final chunk of characters should be handled. The three options are `"loose"` (the default), which treats the chunk as if it had any necessary `=` padding (but throws if this is not possible, i.e. there is exactly one extra character); `"strict"`, which enforces that the chunk has exactly 4 characters (counting `=` padding) and that [overflow bits](https://datatracker.ietf.org/doc/html/rfc4648#section-3.5) are 0; and `"stop-before-partial"`, which stops decoding before the final chunk unless the final chunk has exactly 4 characters.
 
 The hex methods do not take any options.
 

@@ -49,7 +49,7 @@ if (navigator.clipboard) {
 <h1>Proposed Support for Base64 in JavaScript</h1>
 
 <h2 id="introduction">Introduction</h2>
-<p>This page documents a stage-2 proposal for native base64 and hex encoding and decoding for binary data in JavaScript, and includes a <strong>non-production</strong> polyfill you can experiment with in the browser's console.</p>
+<p>This page documents a stage 3 proposal for native base64 and hex encoding and decoding for binary data in JavaScript, and includes a <strong>non-production</strong> polyfill you can experiment with in the browser's console.</p>
 <p>The proposal would provide methods for encoding and decoding Uint8Arrays as base64 and hex strings.</p>
 <p>Feedback on <a href="https://github.com/tc39/proposal-arraybuffer-base64">the proposal's repository</a> is appreciated.</p>
 <p>Specification text for the proposal is available <a href="https://tc39.es/proposal-arraybuffer-base64/spec/">here</a>.</p>
@@ -86,7 +86,7 @@ console.log(Uint8Array.fromHex(string));
 
 <h3>Options</h3>
 <p>The base64 methods take an optional options bag which allows specifying the alphabet as either <code>"base64"</code> (the default) or <code>"base64url"</code> (<a href="https://datatracker.ietf.org/doc/html/rfc4648#section-5">the URL-safe variant</a>).</p>
-<p>The base64 decoder also allows specifying the behavior for the final chunk with <code>lastChunkHandling</code>. Recall that base64 decoding operates on chunks of 4 characters at a time, but the input maybe have some characters which don't fit evenly into such a chunk of 4 characters. This option determines how the final chunk of characters should be handled. The three options are <code>"loose"</code> (the default), which treats the chunk as if it had any necessary <code>=</code> padding (but throws if this is not possible, i.e. there is exactly one extra character); <code>"strict"</code>, which enforces that the chunk has exactly 4 characters (counting <code>=</code> padding) and that <a href="https://datatracker.ietf.org/doc/html/rfc4648#section-3.5">overflow bits</a> are 0; and <code>"stop-before-partial"</code>, which stops decoding before the final chunk unless the final chunk has exactly 4 characters.
+<p>The base64 decoder also allows specifying the behavior for the final chunk with <code>lastChunkHandling</code>. Recall that base64 decoding operates on chunks of 4 characters at a time, but the input may have some characters which don't fit evenly into such a chunk of 4 characters. This option determines how the final chunk of characters should be handled. The three options are <code>"loose"</code> (the default), which treats the chunk as if it had any necessary <code>=</code> padding (but throws if this is not possible, i.e. there is exactly one extra character); <code>"strict"</code>, which enforces that the chunk has exactly 4 characters (counting <code>=</code> padding) and that <a href="https://datatracker.ietf.org/doc/html/rfc4648#section-3.5">overflow bits</a> are 0; and <code>"stop-before-partial"</code>, which stops decoding before the final chunk unless the final chunk has exactly 4 characters.
 <p>The hex methods do not have any options.</p>
 
 <pre class="language-js"><code class="language-js">
