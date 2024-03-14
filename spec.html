@@ -220,7 +220,7 @@ contributors: Kevin Gibbons
     </h1>
     <dl class="header">
     </dl>
-    <p>The <dfn id="standard-base64-alphabet">standard base64 alphabet</dfn> is a List whose elements are the code points corresponding to every letter and number in the Unicode Basic Latin block along with *"+"* and *"/"*; that is, it is StringToCodePoints(*"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"*).</p>
+    <p>The <dfn id="standard-base64-alphabet">standard base64 alphabet</dfn> is the String whose elements are the code units corresponding to every letter and number in the Unicode Basic Latin block along with *"+"* and *"/"*; that is, it is *"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"*.</p>
     <emu-alg>
       1. Let _chunkLength_ be the length of _chunk_.
       1. If _chunkLength_ is 2, then
@@ -308,7 +308,7 @@ contributors: Kevin Gibbons
           1. If _char_ is either *"+"* or *"/"*, throw a *SyntaxError* exception.
           1. Else if _char_ is *"-"*, set _char_ to *"+"*.
           1. Else if _char_ is *"_"*, set _char_ to *"/"*.
-        1. If _char_ is not an element of the standard base64 alphabet, throw a *SyntaxError* exception.
+        1. If the sole code unit of _char_ is not an element of the standard base64 alphabet, throw a *SyntaxError* exception.
         1. Let _remaining_ be _maxLength_ - the length of _bytes_.
         1. If _remaining_ = 1 and _chunkLength_ = 2, or if _remaining_ = 2 and _chunkLength_ = 3, then
           1. Return the Record { [[Read]]: _read_, [[Bytes]]: _bytes_ }.
