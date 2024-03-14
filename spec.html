@@ -83,8 +83,7 @@ contributors: Kevin Gibbons
     1. Let _taRecord_ be MakeTypedArrayWithBufferWitnessRecord(_into_, ~seq-cst~).
     1. If IsTypedArrayOutOfBounds(_taRecord_) is *true*, throw a *TypeError* exception.
     1. Let _byteLength_ be TypedArrayLength(_taRecord_).
-    1. Let _maxLength_ be _byteLength_.
-    1. Let _result_ be ? FromBase64(_string_, _alphabet_, _lastChunkHandling_, _maxLength_).
+    1. Let _result_ be ? FromBase64(_string_, _alphabet_, _lastChunkHandling_, _byteLength_).
     1. Let _bytes_ be _result_.[[Bytes]].
     1. Let _written_ be the length of _bytes_.
     1. NOTE: FromBase64 does not invoke any user code, so the ArrayBuffer backing _into_ cannot have been detached or shrunk.
@@ -118,8 +117,7 @@ contributors: Kevin Gibbons
     1. Let _taRecord_ be MakeTypedArrayWithBufferWitnessRecord(_into_, ~seq-cst~).
     1. If IsTypedArrayOutOfBounds(_taRecord_) is *true*, throw a *TypeError* exception.
     1. Let _byteLength_ be TypedArrayLength(_taRecord_).
-    1. Let _maxLength_ be _byteLength_.
-    1. Let _result_ be ? FromHex(_string_, _maxLength_).
+    1. Let _result_ be ? FromHex(_string_, _byteLength_).
     1. Let _bytes_ be _result_.[[Bytes]].
     1. Let _written_ be the length of _bytes_.
     1. NOTE: FromHex does not invoke any user code, so the ArrayBuffer backing _into_ cannot have been detached or shrunk.
