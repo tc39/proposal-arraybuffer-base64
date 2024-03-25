@@ -8,6 +8,8 @@ Try it out on [the playground](https://tc39.github.io/proposal-arraybuffer-base6
 
 Spec text is available [here](https://tc39.github.io/proposal-arraybuffer-base64/spec/), and test262 tests in [this PR](https://github.com/tc39/test262/pull/3994).
 
+Implementers may be interested in [the open-source simdutf library](https://github.com/simdutf/simdutf/?tab=readme-ov-file#base64), which provides a fast implementation of a base64 decoder which matches `Uint8Array.fromBase64(string)` (including handling of whitespace) when it is called without specifying any options. As of this writing it only works on latin1 strings, but a utf16 version [may be coming](https://github.com/simdutf/simdutf/pull/375#issuecomment-2016979707).
+
 ## Basic API
 
 ```js
