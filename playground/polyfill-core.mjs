@@ -124,7 +124,7 @@ function skipAsciiWhitespace(string, index) {
 
 function fromBase64(string, alphabet, lastChunkHandling, maxLength) {
   if (maxLength === 0) {
-    return { read: 0, bytes: [] };
+    return { read: 0, bytes: [], error: null };
   }
 
   let read = 0;
@@ -137,33 +137,37 @@ function fromBase64(string, alphabet, lastChunkHandling, maxLength) {
     if (index === string.length) {
       if (chunk.length > 0) {
         if (lastChunkHandling === 'stop-before-partial') {
-          return { bytes, read };
+          return { bytes, read, error: null };
         } else if (lastChunkHandling === 'loose') {
           if (chunk.length === 1) {
-            throw new SyntaxError('malformed padding: exactly one additional character');
+            let error = new SyntaxError('malformed padding: exactly one additional character');
+            return { bytes, read, error };
           }
           bytes.push(...decodeBase64Chunk(chunk, false));
         } else {
           assert(lastChunkHandling === 'strict');
-          throw new SyntaxError('missing padding');
+          let error = new SyntaxError('missing padding');
+          return { bytes, read, error };
         }
       }
-      return { bytes, read: string.length };
+      return { bytes, read: string.length, error: null };
     }
     let char = string[index];
     ++index;
     if (char === '=') {
       if (chunk.length < 2) {
-        throw new SyntaxError('padding is too early');
+        let error = new SyntaxError('padding is too early');
+        return { bytes, read, error };
       }
       index = skipAsciiWhitespace(string, index);
       if (chunk.length === 2) {
         if (index === string.length) {
           if (lastChunkHandling === 'stop-before-partial') {
             // two characters then `=` then EOS: this is, technically, a partial chunk
-            return { bytes, read };
+            return { bytes, read, error: null };
           }
-          throw new SyntaxError('malformed padding - only one =');
+          let error = new SyntaxError('malformed padding - only one =');
+          return { bytes, read, error };
         }
         if (string[index] === '=') {
           ++index;
@@ -171,15 +175,17 @@ function fromBase64(string, alphabet, lastChunkHandling, maxLength) {
         }
       }
       if (index < string.length) {
-        throw new SyntaxError('unexpected character after padding');
+        let error = new SyntaxError('unexpected character after padding');
+        return { bytes, read, error };
       }
       bytes.push(...decodeBase64Chunk(chunk, lastChunkHandling === 'strict'));
       assert(bytes.length <= maxLength);
-      return { bytes, read: string.length };
+      return { bytes, read: string.length, error: null };
     }
     if (alphabet === 'base64url') {
       if (char === '+' || char === '/') {
-        throw new SyntaxError(`unexpected character ${JSON.stringify(char)}`);
+        let error = new SyntaxError(`unexpected character ${JSON.stringify(char)}`);
+        return { bytes, read, error };
       } else if (char === '-') {
         char = '+';
       } else if (char === '_') {
@@ -187,12 +193,13 @@ function fromBase64(string, alphabet, lastChunkHandling, maxLength) {
       }
     }
     if (!base64Characters.includes(char)) {
-      throw new SyntaxError(`unexpected character ${JSON.stringify(char)}`);
+      let error = new SyntaxError(`unexpected character ${JSON.stringify(char)}`);
+      return { bytes, read, error };
     }
     let remainingBytes = maxLength - bytes.length;
     if (remainingBytes === 1 && chunk.length === 2 || remainingBytes === 2 && chunk.length === 3) {
       // special case: we can fit exactly the number of bytes currently represented by chunk, so we were just checking for `=`
-      return { bytes, read };
+      return { bytes, read, error: null };
     }
 
     chunk += char;
@@ -202,7 +209,7 @@ function fromBase64(string, alphabet, lastChunkHandling, maxLength) {
       read = index;
       assert(bytes.length <= maxLength);
       if (bytes.length === maxLength) {
-        return { bytes, read };
+        return { bytes, read, error: null };
       }
     }
   }
@@ -230,12 +237,19 @@ export function base64ToUint8Array(string, options, into) {
 
   let maxLength = into ? into.length : 2 ** 53 - 1;
 
-  let { bytes, read } = fromBase64(string, alphabet, lastChunkHandling, maxLength);
+  let { bytes, read, error } = fromBase64(string, alphabet, lastChunkHandling, maxLength);
+  if (error && !into) {
+    throw error;
+  }
 
   bytes = new Uint8Array(bytes);
   if (into && bytes.length > 0) {
     assert(bytes.length <= into.length);
     into.set(bytes);
+  }
+
+  if (error) {
+    throw error;
   }
 
   return { read, bytes };
@@ -253,6 +267,26 @@ export function uint8ArrayToHex(arr) {
   return out;
 }
 
+function fromHex(string, maxLength) {
+  let bytes = [];
+  let read = 0;
+  if (maxLength > 0) {
+    while (read < string.length) {
+      let hexits = string.slice(read, read + 2);
+      if (/[^0-9a-fA-F]/.test(hexits)) {
+        let error = new SyntaxError('string should only contain hex characters');
+        return { read, bytes, error }
+      }
+      bytes.push(parseInt(hexits, 16));
+      read += 2;
+      if (bytes.length === maxLength) {
+        break;
+      }
+    }
+  }
+  return { read, bytes, error: null }
+}
+
 export function hexToUint8Array(string, into) {
   if (typeof string !== 'string') {
     throw new TypeError('expected string to be a string');
@@ -265,23 +299,9 @@ export function hexToUint8Array(string, into) {
   }
 
   let maxLength = into ? into.length : 2 ** 53 - 1;
-
-  // TODO should hex allow whitespace?
-  // TODO should hex support lastChunkHandling? (only 'strict' or 'stop-before-partial')
-  let bytes = [];
-  let index = 0;
-  if (maxLength > 0) {
-    while (index < string.length) {
-      let hexits = string.slice(index, index + 2);
-      if (/[^0-9a-fA-F]/.test(hexits)) {
-        throw new SyntaxError('string should only contain hex characters');
-      }
-      bytes.push(parseInt(hexits, 16));
-      index += 2;
-      if (bytes.length === maxLength) {
-        break;
-      }
-    }
+  let { read, bytes, error } = fromHex(string, maxLength);
+  if (error && !into) {
+    throw error;
   }
 
   bytes = new Uint8Array(bytes);
@@ -290,5 +310,9 @@ export function hexToUint8Array(string, into) {
     into.set(bytes);
   }
 
-  return { read: index, bytes };
+  if (error) {
+    throw error;
+  }
+
+  return { read, bytes };
 }

@@ -89,6 +89,14 @@ test('alphabet-specific strings', async t => {
   });
 });
 
+test('valid data before invalid data is written', async t => {
+  let input = 'Zm9vYmFyxx!';
+  let target = new Uint8Array(9);
+
+  assert.throws(() => target.setFromBase64(input), SyntaxError);
+  assert.deepStrictEqual(target, Uint8Array.of(102, 111, 111, 98, 97, 114, 0, 0, 0));
+});
+
 test('writing to an existing buffer', async t => {
   let foobarInput = 'Zm9vYmFy';
   let foobaInput = 'Zm9vYmE';
@@ -215,4 +223,12 @@ test('hex', async t => {
     assert.deepStrictEqual([...output], decoded.slice(0, 3));
     assert.deepStrictEqual({ read, written }, { read: 6, written: 3 });
   });
+});
+
+test('valid data before invalid data is written', async t => {
+  let input = 'deadbeef!!';
+  let target = new Uint8Array(6);
+
+  assert.throws(() => target.setFromHex(input), SyntaxError);
+  assert.deepStrictEqual(target, Uint8Array.of(222, 173, 190, 239, 0, 0));
 });
