@@ -26,6 +26,14 @@ test('standard vectors', async t => {
   }
 });
 
+test('omitPadding', async t => {
+  for (let [string, result] of standardBase64Vectors) {
+    await t.test(JSON.stringify(string), () => {
+      assert.strictEqual(stringToBytes(string).toBase64({ omitPadding: true }), result.replace(/=/g, ''));
+    });
+  }
+});
+
 let malformedPadding = ['=', 'Zg=', 'Z===', 'Zm8==', 'Zm9v='];
 test('malformed padding', async t => {
   for (let string of malformedPadding) {

@@ -23,12 +23,13 @@ contributors: Kevin Gibbons
     1. Let _alphabet_ be ? Get(_opts_, *"alphabet"*).
     1. If _alphabet_ is *undefined*, set _alphabet_ to *"base64"*.
     1. If _alphabet_ is neither *"base64"* nor *"base64url"*, throw a *TypeError* exception.
+    1. Let _omitPadding_ be ToBoolean(? Get(_opts_, *"omitPadding"*)).
     1. Let _toEncode_ be ? GetUint8ArrayBytes(_O_).
     1. If _alphabet_ is *"base64"*, then
-      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64 encoding specified in section 4 of <a href="https://datatracker.ietf.org/doc/html/rfc4648">RFC 4648</a>. Padding is included.
+      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64 encoding specified in section 4 of <a href="https://datatracker.ietf.org/doc/html/rfc4648">RFC 4648</a>. Padding is included if and only if _omitPadding_ is *false*.
     1. Else,
       1. Assert: _alphabet_ is *"base64url"*.
-      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64url encoding specified in section 5 of <a href="https://datatracker.ietf.org/doc/html/rfc4648">RFC 4648</a>. Padding is included.
+      1. Let _outAscii_ be the sequence of code points which results from encoding _toEncode_ according to the base64url encoding specified in section 5 of <a href="https://datatracker.ietf.org/doc/html/rfc4648">RFC 4648</a>. Padding is included if and only if _omitPadding_ is *false*.
     1. Return CodePointsToString(_outAscii_).
   </emu-alg>
 </emu-clause>

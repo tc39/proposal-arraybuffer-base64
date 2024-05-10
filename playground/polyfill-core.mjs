@@ -40,6 +40,7 @@ export function uint8ArrayToBase64(arr, options) {
   if (alphabet !== 'base64' && alphabet !== 'base64url') {
     throw new TypeError('expected alphabet to be either "base64" or "base64url"');
   }
+  let omitPadding = !!opts.omitPadding;
 
   if ('detached' in arr.buffer && arr.buffer.detached) {
     throw new TypeError('toBase64 called on array backed by detached buffer');
@@ -63,13 +64,13 @@ export function uint8ArrayToBase64(arr, options) {
       lookup[(triplet >> 18) & 63] +
       lookup[(triplet >> 12) & 63] +
       lookup[(triplet >> 6) & 63] +
-      '=';
+      (omitPadding ? '' : '=');
   } else if (i + 1 === arr.length) {
     let triplet = arr[i] << 16;
     result +=
       lookup[(triplet >> 18) & 63] +
       lookup[(triplet >> 12) & 63] +
-      '==';
+      (omitPadding ? '' : '==');
   }
   return result;
 }
