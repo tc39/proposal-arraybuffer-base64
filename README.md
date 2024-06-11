@@ -40,6 +40,8 @@ Additional options are supplied in an options bag argument:
 
 - `lastChunkHandling`: Recall that base64 decoding operates on chunks of 4 characters at a time, but the input may have some characters which don't fit evenly into such a chunk of 4 characters. This option determines how the final chunk of characters should be handled. The three options are `"loose"` (the default), which treats the chunk as if it had any necessary `=` padding (but throws if this is not possible, i.e. there is exactly one extra character); `"strict"`, which enforces that the chunk has exactly 4 characters (counting `=` padding) and that [overflow bits](https://datatracker.ietf.org/doc/html/rfc4648#section-3.5) are 0; and `"stop-before-partial"`, which stops decoding before the final chunk unless the final chunk has exactly 4 characters.
 
+- `omitPadding`: When encoding, whether to include `=` padding. Defaults to `false`, i.e., padding is included.
+
 The hex methods do not take any options.
 
 ## Writing to an existing Uint8Array
@@ -88,10 +90,6 @@ and decoders can vary in the following ways:
 For base64, you can specify either base64 or base64url for both the encoder and the decoder.
 
 For hex, both lowercase and uppercase characters (including mixed within the same string) will decode successfully. Output is always lowercase.
-
-### How is `=` padding handled?
-
-Padding is always generated. The base64 decoder allows specifying how to handle inputs without it with the `lastChunkHandling` option.
 
 ### How are the extra padding bits handled?
 
