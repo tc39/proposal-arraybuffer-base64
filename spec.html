@@ -262,7 +262,7 @@ contributors: Kevin Gibbons
         _alphabet_: *"base64"* or *"base64url"*,
         _lastChunkHandling_: *"loose"*, *"strict"*, or *"stop-before-partial"*,
         optional _maxLength_: a non-negative integer,
-      ): a Record with fields [[Read]] (an integral Number), [[Bytes]] (a List of byte values), and [[Error]] (either ~none~ or a throw completion)
+      ): a Record with fields [[Read]] (an integral Number), [[Bytes]] (a List of byte values), and [[Error]] (either ~none~ or a *SyntaxError* object)
     </h1>
     <dl class="header">
     </dl>
@@ -353,7 +353,7 @@ contributors: Kevin Gibbons
       FromHex (
         _string_: a string,
         optional _maxLength_: a non-negative integer,
-      ): a Record with fields [[Read]] (an integral Number), [[Bytes]] (a List of byte values), and [[Error]] (either ~none~ or a throw completion)
+      ): a Record with fields [[Read]] (an integral Number), [[Bytes]] (a List of byte values), and [[Error]] (either ~none~ or a *SyntaxError* object)
     </h1>
     <dl class="header">
     </dl>
